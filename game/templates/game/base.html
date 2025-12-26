@@ -1,0 +1,41 @@
+<!-- game/templates/game/base.html -->
+{% load static %}
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>OathBreakers</title>
+    
+    <!-- Libraries -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" />
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'game/css/style.css' %}">
+</head>
+
+<body x-data="gameApp()">
+
+    <!-- Header -->
+    {% include 'game/components/header.html' %}
+
+    <!-- Main Content Injection -->
+    <main class="container mx-auto mt-16 p-4 max-w-md">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Navigation -->
+    {% include 'game/components/navbar.html' %}
+
+    <!-- Modals & Notifications -->
+    {% include 'game/modals/slot_selector.html' %}
+    {% include 'game/modals/pack_opening.html' %}
+    {% include 'game/modals/sell_modal.html' %}
+    {% include 'game/components/notifications.html' %}
+
+    <!-- Logic -->
+    <script src="{% static 'game/js/app.js' %}"></script>
+</body>
+</html>

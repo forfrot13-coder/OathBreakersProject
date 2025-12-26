@@ -1,0 +1,59 @@
+{% load static %}
+<!-- مودال فروش کارت -->
+<div x-show="sellModalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm"
+    x-cloak x-transition.opacity>
+
+    <div class="bg-gray-900 border border-red-800 rounded-2xl w-full max-w-md p-6 relative shadow-2xl shadow-red-900/20"
+        @click.away="sellModalOpen = false">
+
+        <!-- دکمه بستن -->
+        <button @click="sellModalOpen = false" class="absolute top-4 right-4 text-gray-500 hover:text-white">✕</button>
+
+        <h3 class="text-xl font-bold text-white mb-1">فروش در بازار سیاه</h3>
+        <p class="text-xs text-gray-400 mb-6">قیمت گذاری برای: <span class="text-purple-400 font-bold"
+                x-text="selectedCardForSell?.name"></span></p>
+
+        <!-- فرم قیمت گذاری -->
+        <div class="space-y-4">
+
+            <!-- انتخاب نوع ارز -->
+            <div>
+                <label class="block text-xs text-gray-400 mb-2">دریافت چه ارزی؟</label>
+                <div class="flex gap-2">
+                    <button @click="sellCurrency = 'COINS'"
+                        :class="sellCurrency === 'COINS' ? 'bg-yellow-600 text-white border-yellow-400' : 'bg-gray-800 text-gray-400 border-gray-700'"
+                        class="flex-1 py-2 rounded-lg border flex items-center justify-center gap-2 transition-all">
+                        <img src="{% static 'game/images/icon_coin.png' %}" class="w-5 h-5"> سکه
+                    </button>
+                    <button @click="sellCurrency = 'GEMS'"
+                        :class="sellCurrency === 'GEMS' ? 'bg-blue-600 text-white border-blue-400' : 'bg-gray-800 text-gray-400 border-gray-700'"
+                        class="flex-1 py-2 rounded-lg border flex items-center justify-center gap-2 transition-all">
+                        <img src="{% static 'game/images/icon_gem.png' %}" class="w-5 h-5"> الماس
+                    </button>
+                </div>
+            </div>
+
+            <!-- ورودی قیمت -->
+            <div>
+                <label class="block text-xs text-gray-400 mb-2">قیمت پیشنهادی</label>
+                <div class="relative">
+                    <input type="number" x-model="sellPrice"
+                        class="w-full bg-black border border-gray-700 rounded-lg py-3 px-4 text-white text-center text-lg font-bold focus:outline-none focus:border-red-500"
+                        placeholder="0">
+                    <div class="absolute inset-y-0 left-4 flex items-center text-gray-500 text-sm">
+                        <span x-show="sellCurrency === 'COINS'">Scoins</span>
+                        <span x-show="sellCurrency === 'GEMS'">Gems</span>
+                    </div>
+                </div>
+                <p class="text-[10px] text-gray-500 mt-1 text-center">۱۰٪ مالیات بازار سیاه کسر خواهد شد.</p>
+            </div>
+
+            <!-- دکمه تایید -->
+            <button @click="createListing()"
+                class="w-full bg-red-700 hover:bg-red-600 text-white font-bold py-3 rounded-xl mt-4 transition-all active:scale-95 shadow-lg">
+                تایید و ثبت آگهی 🔥
+            </button>
+
+        </div>
+    </div>
+</div>

@@ -1,0 +1,111 @@
+/* game/static/game/css/style.css */
+
+body {
+    font-family: 'Vazirmatn', sans-serif;
+    background-color: #050505;
+    color: #e2e8f0;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    padding-bottom: 80px; /* Space for bottom nav */
+}
+
+/* مخفی کردن المان‌ها قبل از لود کامل آلپاین */
+[x-cloak] {
+    display: none !important;
+}
+
+.glass-panel {
+    background: rgba(20, 20, 20, 0.7);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(139, 92, 246, 0.2);
+}
+
+.nav-item.active {
+    color: #d8b4fe;
+}
+
+.nav-item.active svg {
+    filter: drop-shadow(0 0 5px #a855f7);
+    transform: translateY(-2px);
+}
+
+/* کارت‌های اسلات ماینینگ */
+.slot-card {
+    background: rgba(10, 10, 10, 0.8);
+    border: 2px dashed #4c1d95;
+    height: 140px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.slot-card.filled {
+    border: 1px solid #d97706;
+    background: #111;
+    border-style: solid;
+}
+
+/* انتخاب آواتار */
+.avatar-option {
+    border: 2px solid transparent;
+    transition: all 0.2s;
+}
+
+.avatar-option.selected {
+    border-color: #d97706;
+    transform: scale(1.1);
+    box-shadow: 0 0 10px #d97706;
+}
+/* --- 3D Animation & Pack Opening --- */
+
+/* کانتینر سه بعدی */
+.perspective-1000 {
+    perspective: 1000px;
+}
+
+.transform-style-3d {
+    transform-style: preserve-3d;
+}
+
+.backface-hidden {
+    backface-visibility: hidden;
+}
+
+.rotate-y-180 {
+    transform: rotateY(180deg);
+}
+
+/* انیمیشن لرزش پک */
+@keyframes shake-pack {
+    0% { transform: translate(0, 0) rotate(0deg); }
+    25% { transform: translate(-5px, 5px) rotate(-5deg); }
+    50% { transform: translate(5px, -5px) rotate(5deg); }
+    75% { transform: translate(-5px, 5px) rotate(-5deg); }
+    100% { transform: translate(0, 0) rotate(0deg); }
+}
+
+.animate-shake {
+    animation: shake-pack 0.5s infinite;
+}
+
+/* افکت درخشش پشت کارت بر اساس کمیابی */
+.glow-COMMON { box-shadow: 0 0 20px #9ca3af; }
+.glow-RARE { box-shadow: 0 0 30px #3b82f6; }
+.glow-EPIC { box-shadow: 0 0 40px #a855f7; }
+.glow-LEGENDARY { box-shadow: 0 0 60px #eab308; }
+
+/* کارت پشت‌رو */
+.card-back {
+    background: repeating-linear-gradient(
+        45deg,
+        #1a1a1a,
+        #1a1a1a 10px,
+        #2a2a2a 10px,
+        #2a2a2a 20px
+    );
+    border: 2px solid #4c1d95;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}

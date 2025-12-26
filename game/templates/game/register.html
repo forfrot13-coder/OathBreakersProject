@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ثبت نام — OathBreakers</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" />
+    <style>
+        body {
+            font-family: 'Vazirmatn', sans-serif;
+            background: #000;
+            color: #fff;
+        }
+    </style>
+</head>
+
+<body class="flex items-center justify-center min-h-screen p-4" x-data="authApp()">
+    <script>window.INITIAL_MODE = 'register';</script>
+
+    <div class="w-full max-w-md p-8 bg-black/60 backdrop-blur-xl border border-purple-900 rounded-2xl shadow-2xl">
+        <div class="text-center mb-6">
+            <h1
+                class="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500">
+                ثبت نام</h1>
+            <p class="text-gray-400 text-sm">یک حساب بسازید و شروع کنید</p>
+        </div>
+
+        <form @submit.prevent="submitAuth" class="space-y-4">
+            <div>
+                <label class="block text-sm text-gray-400 mb-1">نام کاربری</label>
+                <input type="text" x-model="username" class="w-full p-3 rounded-lg neon-input text-white" required>
+            </div>
+            <div>
+                <label class="block text-sm text-gray-400 mb-1">رمز عبور</label>
+                <input type="password" x-model="password" class="w-full p-3 rounded-lg neon-input text-white" required>
+            </div>
+
+            <button type="submit" class="w-full py-3 bg-purple-600 rounded-lg font-bold">ثبت نام و دریافت هدیه</button>
+        </form>
+
+        <p class="mt-4 text-center text-sm"><a href="/login/" class="text-gray-400 underline">حالا وارد شوید</a></p>
+    </div>
+
+    <!-- reuse same modal markup as login page (Alpine managed) -->
+    <div x-show="showSuccessModal" x-cloak class="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+        <div class="bg-[#071018] p-6 rounded-2xl w-full max-w-md border border-white/5">
+            <h3 class="text-xl font-bold mb-3">ثبت‌نام با موفقیت انجام شد!</h3>
+            <p class="text-sm text-gray-300 mb-4" x-text="successData.message || ''"></p>
+
+            <template x-if="successData.starter_card">
+                <div class="mb-4 bg-gray-900 rounded-lg p-3 flex gap-3 items-center">
+                    <img :src="successData.starter_card.image" class="w-20 h-28 object-cover rounded" alt="card">
+                    <div>
+                        <div class="font-bold" x-text="successData.starter_card.card_name"></div>
+                        <div class="text-xs text-gray-400 mt-1">سریال: <span
+                                x-text="successData.starter_card.serial_number"></span></div>
+                    </div>
+                </div>
+            </template>
+
+            <div class="flex gap-3 mb-4">
+                <div class="flex-1 bg-gray-900 p-3 rounded text-center">
+                    <div class="text-xs text-gray-400">الماس</div>
+                    <div class="font-bold" x-text="successData.profile.gems"></div>
+                </div>
+                <div class="flex-1 bg-gray-900 p-3 rounded text-center">
+                    <div class="text-xs text-gray-400">سکه</div>
+                    <div class="font-bold" x-text="successData.profile.coins"></div>
+                </div>
+            </div>
+
+            <div class="flex gap-2">
+                <button @click="closeSuccess(true)" class="flex-1 bg-purple-600 py-2 rounded-lg font-bold">رفتن به
+                    بازی</button>
+                <button @click="closeSuccess(false)"
+                    class="flex-1 border border-white/10 py-2 rounded-lg">بعداً</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // minimal authApp from login.html
+        function authApp() {
+            return {
+                mode: window.INITIAL_MODE || 'register',
+                username: '',
+                password: '',
+                loading: false,
+                message: '',
+                status: '',
+                showSuccessModal: false,
+                successData: {},
+
+                async submitAuth() {
+                    this.loading = true; this.message = '';
+                    const url = '/api/game/auth/register/';
+                    try {
+                        const response = await fetch(url, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+                            body: JSON.stringify({ username: this.username, password: this.password })
+                        });
+                        const data = await response.json();
+                        if (response.ok) {
+                            this.successData = data; this.showSuccessModal = true;
+                        } else {
+                            this.status = 'error'; this.message = data.error || 'خطا';
+                        }
+                    } catch (e) { this.status = 'error'; this.message = 'خطای شبکه.'; }
+                    finally { this.loading = false; }
+                },
+
+                closeSuccess(goToGame) {
+                    if (goToGame) window.location.href = '/';
+                    else this.showSuccessModal = false;
+                }
+            }
+        }
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+    </script>
+</body>
+
+</html>

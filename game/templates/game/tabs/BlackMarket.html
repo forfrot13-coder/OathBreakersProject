@@ -1,0 +1,102 @@
+{% load static %}
+<!-- تب بازار سیاه -->
+<div x-show="currentTab === 'blackmarket'" x-cloak x-transition.opacity.duration.300ms>
+
+    <!-- هدر: عنوان و دکمه رفرش -->
+    <div class="flex justify-between items-center mb-6 border-b border-red-900/50 pb-4">
+        <h2 class="text-2xl font-bold text-red-500 tracking-wider flex items-center gap-2">
+            <span>☠️</span> بازار سیاه
+            <span class="text-xs font-normal text-gray-500 mt-1 mr-2">(معاملات بازیکنان)</span>
+        </h2>
+
+        <button @click="fetchMarketListings()"
+            class="bg-gray-800 hover:bg-red-900/40 text-gray-300 hover:text-red-200 px-3 py-1.5 rounded-lg text-sm transition-all flex items-center gap-1 border border-gray-700 hover:border-red-800">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            <span>بروزرسانی</span>
+        </button>
+    </div>
+
+    <!-- لیست آگهی‌ها -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+
+        <template x-for="listing in marketListings" :key="listing.id">
+            <div
+                class="relative bg-gradient-to-b from-gray-900 to-black border border-gray-800 hover:border-red-600 rounded-xl p-4 transition-all duration-300 hover:shadow-[0_0_15px_rgba(220,38,38,0.2)] group">
+
+                <!-- برچسب زمان (گوشه چپ) -->
+                <div class="absolute top-3 left-3 text-[10px] text-gray-500 bg-black/50 px-2 py-0.5 rounded-full"
+                    x-text="listing.time_ago || 'لحظاتی پیش'"></div>
+
+                <!-- اطلاعات فروشنده -->
+                <div class="flex items-center gap-2 mb-3 pb-3 border-b border-gray-800">
+                    <div
+                        class="w-6 h-6 rounded-full bg-red-900/30 flex items-center justify-center text-xs text-red-400 font-bold border border-red-900">
+                        👤
+                    </div>
+                    <div class="text-xs text-gray-400">
+                        فروشنده: <span class="text-gray-200 font-bold" x-text="listing.seller_name"></span>
+                    </div>
+                </div>
+
+                <!-- بدنه کارت -->
+                <div class="flex gap-4">
+                    <!-- تصویر کارت -->
+                    <div
+                        class="w-16 h-24 bg-gray-800 rounded-lg flex-shrink-0 relative overflow-hidden border border-gray-700">
+                        <template x-if="listing.card_image">
+                            <img :src="listing.card_image" class="w-full h-full object-cover">
+                        </template>
+                        <template x-if="!listing.card_image">
+                            <div class="w-full h-full flex items-center justify-center text-2xl">🃏</div>
+                        </template>
+                        <!-- Rarity Badge -->
+                        <div class="absolute bottom-0 w-full text-[9px] text-center bg-black/70 text-white py-0.5"
+                            x-text="listing.card_rarity"></div>
+                    </div>
+
+                    <!-- مشخصات -->
+                    <div class="flex flex-col justify-between w-full">
+                        <div>
+                            <h3 class="font-bold text-white text-sm truncate" x-text="listing.card_name"></h3>
+                            <div class="text-xs text-green-400 mt-1 flex items-center gap-1">
+                                <span>⛏️</span>
+                                <span x-text="listing.mining_rate"></span>/h
+                            </div>
+                        </div>
+
+                        <!-- قیمت و دکمه خرید -->
+                        <div class="flex items-center justify-between mt-2">
+                            <div class="flex items-center gap-1 bg-gray-800 px-2 py-1 rounded">
+                                <span class="font-bold text-white text-sm" x-text="listing.price"></span>
+                                <!-- آیکون شرطی ارز -->
+                                <template x-if="listing.currency === 'COINS'"><img
+                                        src="{% static 'game/images/icon_coin.png' %}" class="w-4 h-4"></template>
+                                <template x-if="listing.currency === 'GEMS'"><img
+                                        src="{% static 'game/images/icon_gem.png' %}" class="w-4 h-4"></template>
+                            </div>
+
+                            <button @click="buyListing(listing.id)"
+                                class="bg-red-700 hover:bg-red-600 text-white text-xs px-4 py-1.5 rounded shadow-lg shadow-red-900/20 transition-transform active:scale-95 font-bold">
+                                خرید
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </template>
+
+        <!-- حالت خالی بودن لیست -->
+        <div x-show="marketListings.length === 0"
+            class="col-span-1 md:col-span-3 text-center py-16 border-2 border-dashed border-gray-800 rounded-xl bg-gray-900/30">
+            <div class="text-4xl mb-2 grayscale opacity-50">🕸️</div>
+            <p class="text-gray-500 font-bold">بازار سیاه خالی است...</p>
+            <p class="text-xs text-gray-600 mt-1">اولین نفری باش که کارتت را می‌فروشی!</p>
+        </div>
+
+    </div>
+</div>

@@ -1,0 +1,74 @@
+{% load static %}
+<div class="grid grid-cols-2 gap-4">
+    <template x-for="pack in packList" :key="pack.id">
+        <div class="relative group"> <!-- کانتینر اصلی برای پوزیشن نسبی -->
+
+            <!-- کارت پک (بخش قابل کلیک برای خرید) -->
+            <div @click="openPack(pack.id)"
+                class="bg-gradient-to-br from-gray-900 to-black border border-purple-800 rounded-2xl p-4 pt-8 text-center cursor-pointer hover:border-purple-500 active:scale-95 transition-all duration-200 overflow-hidden shadow-lg h-full flex flex-col justify-between">
+
+                <!-- تصویر -->
+                <div class="h-20 mb-2 flex items-center justify-center">
+                    <template x-if="pack.image">
+                        <img :src="pack.image"
+                            class="w-full h-full object-contain drop-shadow-md group-hover:scale-110 transition-transform duration-300">
+                    </template>
+                    <template x-if="!pack.image">
+                        <span class="text-5xl drop-shadow-lg">🔮</span>
+                    </template>
+                </div>
+
+                <!-- نام و قیمت -->
+                <div>
+                    <div class="font-bold text-white text-sm mb-2 truncate" x-text="pack.name"></div>
+
+                    <div
+                        class="flex items-center justify-center gap-1.5 bg-gray-800/80 rounded-lg py-1 px-2 mx-auto w-fit">
+                        <span class="font-bold text-white text-sm" x-text="pack.price"></span>
+
+                        <template x-if="pack.currency_type === 'GEMS'">
+                            <img src="{% static 'game/images/icon_gem.png' %}" class="w-4 h-4">
+                        </template>
+                        <template x-if="pack.currency_type === 'COINS'">
+                            <img src="{% static 'game/images/icon_coin.png' %}" class="w-4 h-4">
+                        </template>
+                    </div>
+                </div>
+            </div>
+
+            <!-- دکمه اطلاعات (Info Button) -->
+            <!-- با کلیک روی این دکمه، متغیر showInfo مربوط به این پک را تلو-تلو (Toggle) می‌کنیم -->
+            <!-- نکته: چون در x-for لوپ ساده هستیم، برای مدیریت state پاپ‌آپ، بهتر است از x-data داخلی استفاده کنیم -->
+
+            <div x-data="{ showInfo: false }" class="absolute top-2 right-2 z-10">
+                <button @click.stop="showInfo = !showInfo"
+                    class="text-gray-400 hover:text-white transition-colors p-1 rounded-full hover:bg-white/10">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </button>
+
+                <!-- تولتیپ / پاپ‌آپ توضیحات -->
+                <div x-show="showInfo" @click.away="showInfo = false"
+                    x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-90"
+                    x-transition:enter-end="opacity-100 scale-100" x-transition:leave="transition ease-in duration-100"
+                    x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-90"
+                    class="absolute top-8 right-0 w-48 bg-gray-800 border border-gray-600 rounded-lg shadow-xl p-3 z-20 text-right">
+
+                    <h4 class="text-xs font-bold text-purple-300 mb-1">محتویات پک:</h4>
+                    <p class="text-xs text-gray-200 leading-relaxed" x-text="pack.description || 'توضیحات ندارد.'"></p>
+
+                    <!-- اگر دراپ ریت هم اضافه کردی -->
+                    <template x-if="pack.drop_rates">
+                        <div class="mt-2 pt-2 border-t border-gray-700">
+                            <p class="text-[10px] text-gray-400" x-text="pack.drop_rates"></p>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+        </div>
+    </template>
+</div>
