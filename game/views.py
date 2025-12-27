@@ -408,25 +408,15 @@ def buy_card(request):
 
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def market_feed(request):
-    # فقط آگهی‌های فعال را نشان بده
-    listings = MarketListing.objects.filter(
-        is_active=True).select_related('card_instance__template')
+    listings = MarketListing.objects.filter(is_active=True).select_related(
+        'seller__user',
+        'card_instance__template',
+    )
 
-    data = []
-    for item in listings:
-        data.append({
-            'listing_id': item.id,
-            'card_name': item.card_instance.template.name,
-            'rarity': item.card_instance.template.rarity,
-            'serial': item.card_instance.serial_number,
-            'price': item.price,
-            'currency': item.currency,
-            'seller': item.seller.user.username
-        })
-
-    return Response(data)
+    serializer = MarketListingSerializer(listings, many=True, context={'request': request})
+    return Response(serializer.data)
 
 
 @api_view(['GET'])
@@ -448,7 +438,7 @@ def game_index(request):
 def equip_card(request):
     profile = request.user.profile
     card_id = request.data.get('card_id')
-    slot_number = request.data.get('slot_number')
+    slot_number = request.data.get('slot_number') or request.data.get('slot')
 
     try:
         slot_number = int(slot_number)

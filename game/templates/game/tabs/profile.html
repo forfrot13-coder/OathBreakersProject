@@ -23,6 +23,6 @@
             <span x-show="!loading.update">ذخیره تغییرات</span>
             <span x-show="loading.update">...</span>
         </button>
-        <button onclick="window.location.href='/api/game/auth/login/'" class="w-full border border-red-900 text-red-500 py-3 rounded-xl font-bold mt-2 hover:bg-red-900/20">خروج از حساب</button>
+        <button @click="logout()" class="w-full border border-red-900 text-red-500 py-3 rounded-xl font-bold mt-2 hover:bg-red-900/20">خروج از حساب</button>
     </div>
 </div>

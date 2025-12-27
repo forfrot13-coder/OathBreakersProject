@@ -66,7 +66,10 @@ TEMPLATES = [
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
+                'django.template.context_processors.debug',
                 'django.template.context_processors.request',
+                'django.template.context_processors.static',
+                'django.template.context_processors.media',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
             ],
@@ -145,16 +148,17 @@ USE_TZ = True
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 
 # مسیر فیزیکی فایل‌های استاتیک هنگام collectstatic (برای سرور واقعی)
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # مسیرهای اضافی برای جستجوی فایل‌های استاتیک در حالت توسعه
-STATICFILES_DIRS = [
-    BASE_DIR / "static",           # اگر پوشه static در روت پروژه دارید
-    # BASE_DIR / "game" / "static", # (اختیاری) اگر جنگو پوشه اپ را پیدا نکرد
-]
+# اگر فولدر static در روت پروژه وجود داشته باشد، آن را اضافه می‌کنیم تا هشدار W004 نگیریم.
+STATICFILES_DIRS = []
+_root_static_dir = BASE_DIR / 'static'
+if _root_static_dir.exists():
+    STATICFILES_DIRS.append(_root_static_dir)
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'

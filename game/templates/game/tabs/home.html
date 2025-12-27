@@ -46,7 +46,7 @@
     </div>
 
     <!-- Claim Button -->
-    <button @click="claimCoins()" :disabled="loading.claim"
+    <button @click="claimMining()" :disabled="loading.claim"
         class="w-full py-4 rounded-2xl font-bold text-xl shadow-lg transition-transform flex items-center justify-center gap-2 mb-6 relative overflow-hidden"
         :class="loading.claim ? 'bg-gray-700 cursor-not-allowed' : 'bg-gradient-to-r from-green-700 to-emerald-600 hover:from-green-600 active:scale-95 shadow-green-900/40'">
         <span x-show="!loading.claim" class="flex items-center gap-2"><span>💰</span><span>برداشت درآمد</span></span>
@@ -63,7 +63,7 @@
     </button>
 
     <!-- Quick Actions (چون از نویگیشن حذف شدند) -->
-    <div class="grid grid-cols-2 gap-3 mb-6">
+    <div class="grid grid-cols-2 gap-3 mb-4">
         <button @click="currentTab = 'leaderboard'"
             class="glass-panel p-3 rounded-xl text-center text-xs text-blue-300 hover:bg-white/5">
             🏆 رتبه‌بندی
@@ -71,6 +71,13 @@
         <button @click="currentTab = 'exchange'"
             class="glass-panel p-3 rounded-xl text-center text-xs text-indigo-300 hover:bg-white/5">
             💱 صرافی
+        </button>
+    </div>
+    
+    <div class="mb-6">
+        <button @click="currentTab = 'blackmarket'; fetchMarketListings()"
+            class="w-full glass-panel p-4 rounded-xl text-center text-sm text-red-400 hover:bg-red-900/10 border border-red-900/30 font-bold flex items-center justify-center gap-2">
+            <span>☠️</span> بازار سیاه
         </button>
     </div>
 </div>
