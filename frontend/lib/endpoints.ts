@@ -5,17 +5,17 @@ export const endpoints = {
     login: '/auth/login/',
     register: '/auth/register/',
     refresh: '/auth/refresh/',
-    me: '/profile/',
+    me: '/profile/me/',
   },
   profile: {
-    me: '/profile/',
+    me: '/profile/me/',
     claim: '/claim/',
   },
   cards: {
     myCards: '/my-cards/',
   },
   market: {
-    list: '/market/list/',
+    list: '/market/',
     listings: '/market/',
     buy: (listingId: number) => `/market/buy/${listingId}/`,
   },
