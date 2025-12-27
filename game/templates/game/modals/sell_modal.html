@@ -3,7 +3,7 @@
 <div x-show="sellModalOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm"
     x-cloak x-transition.opacity>
 
-    <div class="bg-gray-900 border border-red-800 rounded-2xl w-full max-w-md p-6 relative shadow-2xl shadow-red-900/20"
+    <div class="sell-modal-3d bg-gray-900 border border-red-800 rounded-2xl w-full max-w-md p-6 relative shadow-2xl shadow-red-900/20"
         @click.away="sellModalOpen = false">
 
         <!-- دکمه بستن -->
@@ -22,13 +22,13 @@
                 <div class="flex gap-2">
                     <button @click="sellCurrency = 'COINS'"
                         :class="sellCurrency === 'COINS' ? 'bg-yellow-600 text-white border-yellow-400' : 'bg-gray-800 text-gray-400 border-gray-700'"
-                        class="flex-1 py-2 rounded-lg border flex items-center justify-center gap-2 transition-all">
-                        <img src="{% static 'game/images/icon_coin.png' %}" class="w-5 h-5"> سکه
+                        class="flex-1 py-2 rounded-lg border flex items-center justify-center gap-2 transition-all btn-3d">
+                        <img src="{% static 'game/images/icon_coin.png' %}" class="w-5 h-5 float-3d"> سکه
                     </button>
                     <button @click="sellCurrency = 'GEMS'"
                         :class="sellCurrency === 'GEMS' ? 'bg-blue-600 text-white border-blue-400' : 'bg-gray-800 text-gray-400 border-gray-700'"
-                        class="flex-1 py-2 rounded-lg border flex items-center justify-center gap-2 transition-all">
-                        <img src="{% static 'game/images/icon_gem.png' %}" class="w-5 h-5"> الماس
+                        class="flex-1 py-2 rounded-lg border flex items-center justify-center gap-2 transition-all btn-3d">
+                        <img src="{% static 'game/images/icon_gem.png' %}" class="w-5 h-5 float-3d"> الماس
                     </button>
                 </div>
             </div>
@@ -38,7 +38,7 @@
                 <label class="block text-xs text-gray-400 mb-2">قیمت پیشنهادی</label>
                 <div class="relative">
                     <input type="number" x-model="sellPrice"
-                        class="w-full bg-black border border-gray-700 rounded-lg py-3 px-4 text-white text-center text-lg font-bold focus:outline-none focus:border-red-500"
+                        class="w-full bg-black border border-gray-700 rounded-lg py-3 px-4 text-white text-center text-lg font-bold focus:outline-none focus:border-red-500 input-3d"
                         placeholder="0">
                     <div class="absolute inset-y-0 left-4 flex items-center text-gray-500 text-sm">
                         <span x-show="sellCurrency === 'COINS'">Scoins</span>
@@ -50,7 +50,7 @@
 
             <!-- دکمه تایید -->
             <button @click="createListing()"
-                class="w-full bg-red-700 hover:bg-red-600 text-white font-bold py-3 rounded-xl mt-4 transition-all active:scale-95 shadow-lg">
+                class="w-full bg-red-700 hover:bg-red-600 text-white font-bold py-3 rounded-xl mt-4 transition-all active:scale-95 shadow-lg btn-3d">
                 تایید و ثبت آگهی 🔥
             </button>
 

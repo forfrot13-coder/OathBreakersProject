@@ -1,15 +1,15 @@
 <div x-show="currentTab === 'exchange'" x-cloak x-transition.opacity.duration.300ms>
     <div class="flex justify-between items-center mb-4">
         <h2 class="text-xl font-bold text-indigo-400">صرافی</h2>
-        <button @click="currentTab = 'home'" class="text-xs text-gray-400">بازگشت</button>
+        <button @click="currentTab = 'home'" class="text-xs text-gray-400 hover:text-white btn-3d px-3 py-1">بازگشت</button>
     </div>
-    <div class="glass-panel rounded-xl p-4 mb-4">
+    <div class="glass-panel rounded-xl p-4 mb-4 hover-lift-3d transition-all duration-300">
         <p class="text-sm text-gray-300 mb-3">نرخ: هر 1000 سکه = 25 الماس.</p>
         <label class="text-xs text-gray-400">مقدار سکه برای تبدیل</label>
-        <input type="number" x-model="exchangeAmount" min="1000" step="1000" class="w-full p-3 rounded mt-2 bg-gray-900 border border-gray-700 text-white">
+        <input type="number" x-model="exchangeAmount" min="1000" step="1000" class="w-full p-3 rounded mt-2 bg-gray-900 border border-gray-700 text-white input-3d">
         <div class="flex gap-2 mt-3">
-            <button @click="convertCoins()" class="flex-1 bg-indigo-600 py-3 rounded font-bold">تبدیل کن</button>
-            <button @click="useMaxExchange()" class="flex-1 border border-white/10 py-3 rounded">تبدیل حداکثر</button>
+            <button @click="convertCoins()" class="flex-1 bg-indigo-600 py-3 rounded font-bold btn-3d">تبدیل کن</button>
+            <button @click="useMaxExchange()" class="flex-1 border border-white/10 py-3 rounded btn-3d">تبدیل حداکثر</button>
         </div>
     </div>
 </div>

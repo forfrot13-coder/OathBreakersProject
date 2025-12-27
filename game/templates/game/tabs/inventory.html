@@ -1,19 +1,19 @@
 <div x-show="currentTab === 'inventory'" x-cloak x-transition.opacity.duration.300ms>
     <h2 class="text-xl font-bold text-purple-400 mb-4">کیف کارت‌ها</h2>
-    
+
     <div class="grid grid-cols-3 gap-2 pb-20">
         <template x-for="card in myCards" :key="card.id">
             <div @click="selectCardAction(card.id)"
-                 class="relative bg-gray-900 rounded-lg overflow-hidden cursor-pointer group border transition-all hover:scale-105"
+                 class="inventory-card relative bg-gray-900 rounded-lg overflow-hidden cursor-pointer group border transition-all card-tilt-3d"
                  :class="{
-                    'border-gray-600': card.rarity === 'COMMON',
-                    'border-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.4)]': card.rarity === 'RARE',
-                    'border-purple-500 shadow-[0_0_12px_rgba(168,85,247,0.5)]': card.rarity === 'EPIC',
-                    'border-yellow-500 shadow-[0_0_15px_rgba(234,179,8,0.6)]': card.rarity === 'LEGENDARY'
+                    'rarity-glow-COMMON': card.rarity === 'COMMON',
+                    'rarity-glow-RARE': card.rarity === 'RARE',
+                    'rarity-glow-EPIC': card.rarity === 'EPIC',
+                    'rarity-glow-LEGENDARY': card.rarity === 'LEGENDARY'
                  }">
-                
-                <div class="aspect-[3/4] w-full relative">
-                    <img :src="card.image" class="w-full h-full object-cover">
+
+                <div class="aspect-[3/4] w-full relative overflow-hidden">
+                    <img :src="card.image" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110">
                     <div class="absolute top-0.5 right-0.5 px-1 rounded text-[7px] font-bold backdrop-blur-md bg-black/60 text-white border border-white/10"
                          :class="{
                             'text-gray-300': card.rarity === 'COMMON',
@@ -22,6 +22,10 @@
                             'text-yellow-300': card.rarity === 'LEGENDARY'
                          }"
                          x-text="card.rarity.substring(0, 1)">
+                    </div>
+                    <!-- Legendary shimmer effect -->
+                    <div x-show="card.rarity === 'LEGENDARY'"
+                         class="absolute inset-0 bg-gradient-to-r from-transparent via-yellow-500/20 to-transparent animate-legendary-shine pointer-events-none">
                     </div>
                 </div>
 
@@ -39,7 +43,7 @@
                 </div>
             </div>
         </template>
-        
+
         <div x-show="myCards.length === 0" class="col-span-3 py-10 text-center text-gray-500">
             کیف شما خالی است.
             <button @click="openMarket()" class="block mx-auto mt-2 text-blue-400 text-xs">خرید از مارکت</button>
