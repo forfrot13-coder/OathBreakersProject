@@ -1,0 +1,31 @@
+services:
+  # Django Web Service
+  - type: web
+    name: oathbreakers-backend
+    env: python
+    region: oregon
+    plan: free
+    branch: main
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn oathbreakers.wsgi:application"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: false
+      - key: DATABASE_URL
+        fromDatabase:
+          name: oathbreakers-db
+          property: connectionString
+      - key: RENDER_EXTERNAL_HOSTNAME
+        sync: false
+
+databases:
+  # PostgreSQL Database
+  - name: oathbreakers-db
+    region: oregon
+    plan: free
+    databaseName: oathbreakers
+    user: oathbreakers
