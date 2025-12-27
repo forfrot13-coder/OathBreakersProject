@@ -53,3 +53,12 @@ export function ProfileSkeleton() {
     </div>
   );
 }
+
+export function UserStatsSkeleton() {
+  return (
+    <div className="space-y-2">
+      <div className="animate-pulse bg-gray-700 rounded h-6 w-48" />
+      <div className="animate-pulse bg-gray-700 rounded h-4 w-32" />
+    </div>
+  );
+}

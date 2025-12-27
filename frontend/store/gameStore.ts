@@ -16,6 +16,11 @@ import type {
 export type { Currency, LeaderboardEntry, MarketListing, Pack, Rarity };
 export type Card = CardInstance;
 
+interface GameError {
+  code: 'INSUFFICIENT_BALANCE' | 'CARD_NOT_FOUND' | 'SERVER_ERROR' | 'NETWORK_ERROR';
+  message: string;
+}
+
 interface GameStore {
   cards: CardInstance[];
   selectedCard: CardInstance | null;
@@ -28,7 +33,7 @@ interface GameStore {
   future: CardInstance[][];
 
   isLoading: boolean;
-  error: string | null;
+  error: GameError | null;
   isOnline: boolean;
 
   fetchCards: () => Promise<void>;
@@ -137,7 +142,13 @@ export const useGameStore = create<GameStore>((set, get) => {
         set({ cards: data, isLoading: false });
         writeCache(STORAGE.cards, data);
       } catch (err) {
-        set({ isLoading: false, error: err instanceof Error ? err.message : 'Failed to fetch cards' });
+        set({
+         isLoading: false,
+         error: {
+           code: 'SERVER_ERROR',
+           message: err instanceof Error ? err.message : 'Failed to fetch cards'
+         }
+        });
         throw err;
       }
     },
@@ -178,7 +189,13 @@ export const useGameStore = create<GameStore>((set, get) => {
         set({ marketListings: data, isLoading: false });
         writeCache(STORAGE.market, data);
       } catch (err) {
-        set({ isLoading: false, error: err instanceof Error ? err.message : 'Failed to fetch marketplace' });
+        set({
+         isLoading: false,
+         error: {
+           code: 'SERVER_ERROR',
+           message: err instanceof Error ? err.message : 'Failed to fetch marketplace'
+         }
+        });
         throw err;
       }
     },
@@ -200,7 +217,13 @@ export const useGameStore = create<GameStore>((set, get) => {
 
         writeCache(STORAGE.tx, get().transactions);
       } catch (err) {
-        set({ isLoading: false, error: err instanceof Error ? err.message : 'Failed to buy card' });
+        set({
+         isLoading: false,
+         error: {
+           code: 'INSUFFICIENT_BALANCE',
+           message: err instanceof Error ? err.message : 'Failed to buy card'
+         }
+        });
         throw err;
       }
     },
@@ -229,7 +252,13 @@ export const useGameStore = create<GameStore>((set, get) => {
 
         writeCache(STORAGE.tx, get().transactions);
       } catch (err) {
-        set({ isLoading: false, error: err instanceof Error ? err.message : 'Failed to list card' });
+        set({
+         isLoading: false,
+         error: {
+           code: 'CARD_NOT_FOUND',
+           message: err instanceof Error ? err.message : 'Failed to list card'
+         }
+        });
         throw err;
       }
     },
@@ -245,7 +274,13 @@ export const useGameStore = create<GameStore>((set, get) => {
         set({ packs: data, isLoading: false });
         writeCache(STORAGE.packs, data);
       } catch (err) {
-        set({ isLoading: false, error: err instanceof Error ? err.message : 'Failed to fetch packs' });
+        set({
+         isLoading: false,
+         error: {
+           code: 'SERVER_ERROR',
+           message: err instanceof Error ? err.message : 'Failed to fetch packs'
+         }
+        });
         throw err;
       }
     },
@@ -270,7 +305,13 @@ export const useGameStore = create<GameStore>((set, get) => {
 
         return data.cards;
       } catch (err) {
-        set({ isLoading: false, error: err instanceof Error ? err.message : 'Failed to open pack' });
+        set({
+         isLoading: false,
+         error: {
+           code: 'SERVER_ERROR',
+           message: err instanceof Error ? err.message : 'Failed to open pack'
+         }
+        });
         throw err;
       }
     },
@@ -286,7 +327,13 @@ export const useGameStore = create<GameStore>((set, get) => {
         set({ leaderboard: data, isLoading: false });
         writeCache(STORAGE.leaderboard, data);
       } catch (err) {
-        set({ isLoading: false, error: err instanceof Error ? err.message : 'Failed to fetch leaderboard' });
+        set({
+         isLoading: false,
+         error: {
+           code: 'SERVER_ERROR',
+           message: err instanceof Error ? err.message : 'Failed to fetch leaderboard'
+         }
+        });
         throw err;
       }
     },

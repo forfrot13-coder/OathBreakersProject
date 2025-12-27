@@ -51,12 +51,12 @@ export default function LeaderboardPage() {
             <div className="text-5xl">{getRankIcon(userRank.rank)}</div>
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-1">
-                <h2 className="text-2xl font-bold">{user.username}</h2>
-                <span className="px-3 py-1 bg-primary/30 text-primary rounded-full text-sm font-medium">
-                  شما
-                </span>
-              </div>
-              <p className="text-muted">سطح {userRank.level} • {userRank.total_cards} کارت</p>
+                 <h2 className="text-2xl font-bold">{user?.username ?? 'Unknown'}</h2>
+                 <span className="px-3 py-1 bg-primary/30 text-primary rounded-full text-sm font-medium">
+                   شما
+                 </span>
+               </div>
+               <p className="text-muted">سطح {userRank.level} • {userRank.total_cards} کارت</p>
             </div>
             <div className="text-right">
               <div className="text-3xl font-bold text-primary">رتبه {userRank.rank}</div>

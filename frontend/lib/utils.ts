@@ -77,20 +77,20 @@ export function formatCurrency(
 
 export function getRarityColor(rarity: Rarity | string): string {
   const colors: Record<string, string> = {
-    COMMON: '#6b7280',
-    RARE: '#3b82f6',
-    EPIC: '#a855f7',
-    LEGENDARY: '#f59e0b',
+    COMMON: '#9CA3AF',
+    RARE: '#60A5FA',
+    EPIC: '#A78BFA',
+    LEGENDARY: '#FBBF24',
   };
-  return colors[rarity] || '#6b7280';
+  return colors[rarity] || '#9CA3AF';
 }
 
 export function getRarityGradient(rarity: Rarity | string): string {
   const gradients: Record<string, string> = {
-    COMMON: 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)',
-    RARE: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-    EPIC: 'linear-gradient(135deg, #a855f7 0%, #7c3aed 100%)',
-    LEGENDARY: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+    COMMON: 'linear-gradient(135deg, #374151 0%, #1F2937 100%)',
+    RARE: 'linear-gradient(135deg, #1E40AF 0%, #1E3A8A 100%)',
+    EPIC: 'linear-gradient(135deg, #6D28D9 0%, #4C1D95 100%)',
+    LEGENDARY: 'linear-gradient(135deg, #B45309 0%, #78350F 100%)',
   };
   return gradients[rarity] || gradients.COMMON;
 }

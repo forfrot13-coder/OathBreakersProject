@@ -48,6 +48,20 @@ export function getErrorMessage(err: unknown): string {
 
   if (e.status === 0) return 'مشکل در اتصال به اینترنت';
 
+  // Handle specific error codes from the ticket
+  const messages: Record<string, string> = {
+    INVALID_CREDENTIALS: 'نام کاربری یا رمز عبور نادرست است',
+    USER_EXISTS: 'این نام کاربری قبلا ثبت شده است',
+    INSUFFICIENT_BALANCE: 'موجودی کافی نیست',
+    CARD_NOT_FOUND: 'کارت یافت نشد',
+    SERVER_ERROR: 'خطای سرور',
+    NETWORK_ERROR: 'مشکل در اتصال',
+  };
+
+  if (e.code && messages[e.code]) {
+    return messages[e.code];
+  }
+
   switch (e.status) {
     case 400:
       return e.message || 'درخواست نامعتبر است';
