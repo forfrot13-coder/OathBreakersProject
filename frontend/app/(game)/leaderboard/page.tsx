@@ -11,7 +11,7 @@ export default function LeaderboardPage() {
   const user = useAuthStore((state) => state.user);
 
   useEffect(() => {
-    fetchLeaderboard().catch((error) => {
+    fetchLeaderboard().catch(() => {
       toast.error('خطا در بارگذاری رتبه‌بندی');
     });
   }, [fetchLeaderboard]);
@@ -94,8 +94,7 @@ export default function LeaderboardPage() {
               <div className="flex items-center gap-4">
                 {/* Rank */}
                 <div
-                  className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl font-bold bg-gradient-to-br`}
-                  style={{ background: getRankColor(entry.rank) }}
+                  className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl font-bold bg-gradient-to-br ${getRankColor(entry.rank)}`}
                 >
                   {getRankIcon(entry.rank)}
                 </div>

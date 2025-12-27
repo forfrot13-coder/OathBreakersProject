@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { cn, formatNumber } from '@/lib/utils';
 
 interface CurrencyDisplayProps {
   coins: number;
@@ -8,6 +9,7 @@ interface CurrencyDisplayProps {
   fragments: number;
   showLabels?: boolean;
   compact?: boolean;
+  animate?: boolean;
 }
 
 export default function CurrencyDisplay({
@@ -16,26 +18,26 @@ export default function CurrencyDisplay({
   fragments,
   showLabels = false,
   compact = false,
+  animate = true,
 }: CurrencyDisplayProps) {
   const currencies = [
     { icon: '🪙', amount: coins, label: 'سکه', color: 'from-yellow-600 to-amber-600' },
-    { icon: '💎', amount: gems, label: 'gem', color: 'from-blue-600 to-cyan-600' },
+    { icon: '💎', amount: gems, label: 'جواهر', color: 'from-blue-600 to-cyan-600' },
     { icon: '🔮', amount: fragments, label: 'قطعه', color: 'from-purple-600 to-pink-600' },
   ];
 
   if (compact) {
     return (
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
         {currencies.map((currency) => (
           <motion.div
             key={currency.label}
-            className="flex items-center gap-2 bg-secondary/50 px-3 py-1.5 rounded-lg"
-            whileHover={{ scale: 1.05 }}
+            className="flex items-center gap-2 bg-secondary/50 px-3 py-2 rounded-lg min-h-[44px]"
+            whileHover={{ scale: 1.04 }}
+            title={currency.label}
           >
             <span className="text-xl">{currency.icon}</span>
-            <span className="font-semibold text-sm">
-              {currency.amount.toLocaleString()}
-            </span>
+            <span className="font-semibold text-sm">{formatNumber(currency.amount, { compact: true })}</span>
           </motion.div>
         ))}
       </div>
@@ -48,16 +50,13 @@ export default function CurrencyDisplay({
         <motion.div
           key={currency.label}
           className="relative flex items-center gap-2"
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: index * 0.1 }}
+          initial={animate ? { opacity: 0, y: -10 } : undefined}
+          animate={animate ? { opacity: 1, y: 0 } : undefined}
+          transition={{ delay: index * 0.08 }}
         >
-          {/* Currency Badge */}
           <div
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r"
-            style={{
-              background: currency.color,
-            }}
+            className={cn('flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r min-h-[44px]', currency.color)}
+            title={currency.label}
           >
             <motion.span
               className="text-2xl"
@@ -70,28 +69,20 @@ export default function CurrencyDisplay({
               <motion.span
                 key={currency.amount}
                 className="font-bold text-white text-lg"
-                initial={{ scale: 1.2 }}
-                animate={{ scale: 1 }}
+                initial={animate ? { scale: 1.15 } : undefined}
+                animate={animate ? { scale: 1 } : undefined}
                 transition={{ type: 'spring', stiffness: 200 }}
               >
-                {currency.amount.toLocaleString()}
+                {formatNumber(currency.amount, { compact: false })}
               </motion.span>
-              {showLabels && (
-                <span className="text-xs text-white/80">{currency.label}</span>
-              )}
+              {showLabels && <span className="text-xs text-white/80">{currency.label}</span>}
             </div>
           </div>
 
-          {/* Glow Effect */}
           <motion.div
-            className="absolute inset-0 blur-xl opacity-30"
-            animate={{
-              opacity: [0.3, 0.5, 0.3],
-            }}
+            className={cn('absolute inset-0 blur-xl opacity-30 bg-gradient-to-r', currency.color)}
+            animate={{ opacity: [0.25, 0.45, 0.25] }}
             transition={{ duration: 2, repeat: Infinity, delay: index * 0.2 }}
-            style={{
-              background: currency.color,
-            }}
           />
         </motion.div>
       ))}

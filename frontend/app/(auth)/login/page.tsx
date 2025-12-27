@@ -1,15 +1,19 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
+import Button from '@/components/Common/Button';
+import { isValidPassword, isValidUsername } from '@/lib/utils';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [touched, setTouched] = useState({ username: false, password: false });
+
   const login = useAuthStore((state) => state.login);
   const initializeAuth = useAuthStore((state) => state.initializeAuth);
   const user = useAuthStore((state) => state.user);
@@ -23,14 +27,27 @@ export default function LoginPage() {
     }
   }, [user, router, initializeAuth]);
 
+  const usernameValid = useMemo(() => isValidUsername(username), [username]);
+  const passwordValid = useMemo(() => isValidPassword(password), [password]);
+
+  const usernameError = touched.username && !usernameValid ? 'نام‌کاربری باید ۳ تا ۲۰ کاراکتر و فقط شامل حروف/اعداد باشد' : '';
+  const passwordError = touched.password && !passwordValid ? 'رمز عبور باید حداقل ۸ کاراکتر و شامل حرف و عدد باشد' : '';
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setTouched({ username: true, password: true });
+
+    if (!usernameValid || !passwordValid) {
+      toast.error('اطلاعات وارد شده معتبر نیست');
+      return;
+    }
+
     try {
       await login(username, password);
       toast.success('خوش‌آمدید! 🎉');
       router.push('/game/dashboard');
-    } catch (error: any) {
-      toast.error(error.message || 'نام‌کاربری یا رمز عبور اشتباه است');
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : 'نام‌کاربری یا رمز عبور اشتباه است');
     }
   };
 
@@ -41,7 +58,6 @@ export default function LoginPage() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
-      {/* Header */}
       <div className="text-center mb-8">
         <motion.div
           className="text-6xl mb-4"
@@ -57,7 +73,6 @@ export default function LoginPage() {
         <p className="text-muted">به بازی خوش‌آمدید</p>
       </div>
 
-      {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
           <label className="block text-sm font-medium mb-2">نام‌کاربری</label>
@@ -65,10 +80,12 @@ export default function LoginPage() {
             type="text"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
+            onBlur={() => setTouched((t) => ({ ...t, username: true }))}
             placeholder="نام‌کاربری خود را وارد کنید"
             required
             className="w-full px-4 py-3 bg-tertiary border border-primary/20 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
           />
+          {usernameError && <p className="mt-2 text-sm text-red-400">{usernameError}</p>}
         </div>
 
         <div>
@@ -77,31 +94,49 @@ export default function LoginPage() {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            onBlur={() => setTouched((t) => ({ ...t, password: true }))}
             placeholder="رمز عبور خود را وارد کنید"
             required
             className="w-full px-4 py-3 bg-tertiary border border-primary/20 rounded-xl focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
           />
+          {passwordError && <p className="mt-2 text-sm text-red-400">{passwordError}</p>}
         </div>
 
-        <motion.button
+        <Button
           type="submit"
           disabled={!username || !password || isLoading}
-          className="w-full py-4 bg-gradient-to-r from-primary to-secondary hover:from-primary-dark hover:to-secondary-dark disabled:from-gray-600 disabled:to-gray-700 text-white font-bold rounded-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
-          whileHover={{ scale: !username || !password || isLoading ? 1 : 1.02 }}
-          whileTap={{ scale: !username || !password || isLoading ? 1 : 0.98 }}
+          loading={isLoading}
+          loadingText="درحال ورود..."
+          className="w-full py-4 bg-gradient-to-r from-primary to-secondary hover:from-primary-dark hover:to-secondary-dark text-white font-bold rounded-xl shadow-lg"
+          ariaLabel="ورود"
         >
-          {isLoading ? (
-            <span className="flex items-center justify-center gap-2">
-              <span className="inline-block w-5 h-5 border-2 border-white border-t-transparent rounded-full spin" />
-              درحال ورود...
-            </span>
-          ) : (
-            'ورود به حساب'
-          )}
-        </motion.button>
+          ورود به حساب
+        </Button>
+
+        {/* Social login mockup */}
+        <div className="pt-2">
+          <div className="text-center text-xs text-muted mb-3">ورود با شبکه‌های اجتماعی (به زودی)</div>
+          <div className="grid grid-cols-2 gap-3">
+            <Button
+              variant="ghost"
+              disabled
+              className="w-full bg-tertiary/40 text-secondary"
+              tooltip="به زودی"
+            >
+              Google
+            </Button>
+            <Button
+              variant="ghost"
+              disabled
+              className="w-full bg-tertiary/40 text-secondary"
+              tooltip="به زودی"
+            >
+              Discord
+            </Button>
+          </div>
+        </div>
       </form>
 
-      {/* Footer */}
       <div className="mt-6 text-center">
         <p className="text-sm text-muted">
           حساب ندارید؟{' '}

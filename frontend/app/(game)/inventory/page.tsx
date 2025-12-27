@@ -8,8 +8,7 @@ import CardGrid from '@/components/Card/CardGrid';
 import CardDisplay from '@/components/Game/Card/CardDisplay';
 import Modal from '@/components/Common/Modal';
 import Button from '@/components/Common/Button';
-import { Card } from '@/store/gameStore';
-import { Rarity } from '@/store/gameStore';
+import type { Card, Rarity } from '@/store/gameStore';
 
 export default function InventoryPage() {
   const { cards, fetchCards, listCard, isLoading } = useGameStore();
@@ -91,7 +90,13 @@ export default function InventoryPage() {
           <div className="spinner" />
         </div>
       ) : (
-        <CardGrid cards={filteredCards} onCardClick={handleCardClick} />
+        <CardGrid
+          cards={filteredCards}
+          onCardClick={handleCardClick}
+          enableSearch
+          enableSorting
+          pageSize={60}
+        />
       )}
 
       {/* Card Detail Modal */}
@@ -140,7 +145,7 @@ export default function InventoryPage() {
                     <label className="block text-sm font-medium mb-2">ارز</label>
                     <select
                       value={currency}
-                      onChange={(e) => setCurrency(e.target.value as any)}
+                      onChange={(e) => setCurrency(e.target.value as typeof currency)}
                       className="w-full px-4 py-3 bg-tertiary border border-primary/20 rounded-xl"
                     >
                       <option value="COINS">🪙 سکه</option>

@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import CardDisplay from '@/components/Game/Card/CardDisplay';
 import Button from '@/components/Common/Button';
-import { Rarity } from '@/store/gameStore';
+import type { Rarity } from '@/store/gameStore';
 
 export default function MarketplacePage() {
   const { marketListings, fetchMarketListings, buyCard, isLoading } = useGameStore();

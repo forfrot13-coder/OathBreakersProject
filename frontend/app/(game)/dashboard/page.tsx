@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useAuthStore } from '@/store/authStore';
 import { useGameStore } from '@/store/gameStore';
 import { motion } from 'framer-motion';
@@ -9,6 +9,10 @@ import Link from 'next/link';
 import MiningWidget from '@/components/Game/Mining/MiningWidget';
 import CardGrid from '@/components/Card/CardGrid';
 import CurrencyDisplay from '@/components/Game/Currency/CurrencyDisplay';
+import { apiFetchJson } from '@/lib/api';
+import { endpoints } from '@/lib/endpoints';
+import type { User } from '@/lib/types';
+import { getErrorMessage } from '@/lib/errorHandler';
 
 export default function DashboardPage() {
   const user = useAuthStore((state) => state.user);
@@ -18,47 +22,33 @@ export default function DashboardPage() {
   const [lastClaim, setLastClaim] = useState<string>('');
   const [isClaiming, setIsClaiming] = useState(false);
 
-  useEffect(() => {
-    fetchCards();
-    fetchProfile();
-  }, []);
-
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/profile/`, {
-        headers: {
-          'Authorization': `Token ${localStorage.getItem('token')}`,
-        },
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setUser(data);
-      }
+      const data = await apiFetchJson<User>(endpoints.profile.me, { useCache: false });
+      setUser(data);
     } catch (error) {
-      console.error('Failed to fetch profile');
+      // eslint-disable-next-line no-console
+      console.error('Failed to fetch profile', error);
     }
-  };
+  }, [setUser]);
+
+  useEffect(() => {
+    void fetchCards();
+    void fetchProfile();
+  }, [fetchCards, fetchProfile]);
 
   const handleClaim = async () => {
     setIsClaiming(true);
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/claim/`, {
+      const data = await apiFetchJson<{ earned_coins: number }>(endpoints.profile.claim, {
         method: 'POST',
-        headers: { 'Authorization': `Token ${token}` },
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'خطا در برداشت');
-      }
-
-      const data = await response.json();
       toast.success(`${data.earned_coins} سکه جمع‌آوری شد! 🪙`);
       setLastClaim(new Date().toISOString());
       fetchProfile();
-    } catch (error: any) {
-      toast.error(error.message || 'خطا در جمع‌آوری سکه‌ها');
+    } catch (error) {
+      toast.error(getErrorMessage(error));
     } finally {
       setIsClaiming(false);
     }

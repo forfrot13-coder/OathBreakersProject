@@ -1,7 +1,9 @@
 'use client';
 
-import { ReactNode, useEffect } from 'react';
+import { ReactNode, useEffect, useId, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+
+let openModalCount = 0;
 
 interface ModalProps {
   isOpen: boolean;
@@ -9,26 +11,53 @@ interface ModalProps {
   title?: string;
   children: ReactNode;
   size?: 'sm' | 'md' | 'lg' | 'xl';
+  closeOnBackdrop?: boolean;
+  closeOnEscape?: boolean;
 }
 
-export default function Modal({ isOpen, onClose, title, children, size = 'md' }: ModalProps) {
+export default function Modal({
+  isOpen,
+  onClose,
+  title,
+  children,
+  size = 'md',
+  closeOnBackdrop = true,
+  closeOnEscape = true,
+}: ModalProps) {
+  const titleId = useId();
+  const containerRef = useRef<HTMLDivElement | null>(null);
+
   useEffect(() => {
+    if (!isOpen) return;
+
+    const active = document.activeElement as HTMLElement | null;
+
     const handleEscape = (e: KeyboardEvent) => {
+      if (!closeOnEscape) return;
       if (e.key === 'Escape') onClose();
     };
 
-    if (isOpen) {
-      document.addEventListener('keydown', handleEscape);
+    document.addEventListener('keydown', handleEscape);
+
+    openModalCount += 1;
+    if (openModalCount === 1) {
       document.body.style.overflow = 'hidden';
     }
 
+    // Focus modal container for accessibility
+    setTimeout(() => containerRef.current?.focus(), 0);
+
     return () => {
       document.removeEventListener('keydown', handleEscape);
-      document.body.style.overflow = 'unset';
-    };
-  }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
+      openModalCount = Math.max(0, openModalCount - 1);
+      if (openModalCount === 0) {
+        document.body.style.overflow = 'unset';
+      }
+
+      active?.focus?.();
+    };
+  }, [isOpen, closeOnEscape, onClose]);
 
   const sizeStyles: Record<string, string> = {
     sm: 'max-w-md',
@@ -39,64 +68,62 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' }:
 
   return (
     <AnimatePresence>
-      <motion.div
-        className="fixed inset-0 z-50 flex items-center justify-center p-4"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        onClick={onClose}
-      >
-        {/* Backdrop */}
+      {isOpen && (
         <motion.div
-          className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-        />
-
-        {/* Modal Content */}
-        <motion.div
-          className={`relative w-full ${sizeStyles[size]} bg-secondary rounded-2xl shadow-2xl p-6`}
-          initial={{ scale: 0.9, opacity: 0, y: 20 }}
-          animate={{ scale: 1, opacity: 1, y: 0 }}
-          exit={{ scale: 0.9, opacity: 0, y: 20 }}
-          transition={{ duration: 0.2 }}
-          onClick={(e) => e.stopPropagation()}
+          onMouseDown={() => {
+            if (closeOnBackdrop) onClose();
+          }}
+          role="presentation"
         >
-          {/* Close Button */}
-          <button
-            onClick={onClose}
-            className="absolute top-4 left-4 text-muted hover:text-primary transition-colors"
-            aria-label="بستن"
+          <motion.div
+            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          />
+
+          <motion.div
+            ref={containerRef}
+            tabIndex={-1}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={title ? titleId : undefined}
+            className={`relative w-full ${sizeStyles[size]} bg-secondary rounded-2xl shadow-2xl p-6 outline-none`}
+            initial={{ scale: 0.95, opacity: 0, y: 16 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.95, opacity: 0, y: 16 }}
+            transition={{ duration: 0.18 }}
+            onMouseDown={(e) => e.stopPropagation()}
           >
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+            <button
+              onClick={onClose}
+              className="absolute top-4 left-4 text-muted hover:text-primary transition-colors"
+              aria-label="بستن"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
 
-          {/* Title */}
-          {title && (
-            <h2 className="text-2xl font-bold mb-6 pr-8">
-              {title}
-            </h2>
-          )}
+            {title && (
+              <h2 id={titleId} className="text-2xl font-bold mb-6 pr-8">
+                {title}
+              </h2>
+            )}
 
-          {/* Content */}
-          <div className="max-h-[70vh] overflow-y-auto">
-            {children}
-          </div>
+            <div className="max-h-[70vh] overflow-y-auto">{children}</div>
+          </motion.div>
         </motion.div>
-      </motion.div>
+      )}
     </AnimatePresence>
   );
 }
