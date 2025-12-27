@@ -1,7 +1,7 @@
 import axios, { AxiosError, type AxiosInstance, type InternalAxiosRequestConfig } from 'axios';
 import type { APIError, PaginatedResponse } from './types';
 
-const API_BASE_URL = '/api';
+const API_BASE_URL = '/api/game';
 
 // Get CSRF token from cookies
 export function getCsrfToken(): string | null {
@@ -171,78 +171,78 @@ export const api = {
 
   // Profile
   getProfile: async () => {
-    const response = await apiClient.get('/game/profile/me/');
+    const response = await apiClient.get('/profile/me/');
     return response.data;
   },
 
   updateProfile: async (data: { username?: string; avatar_id?: number }) => {
-    const response = await apiClient.patch('/game/profile/me/', data);
+    const response = await apiClient.patch('/profile/me/', data);
     return response.data;
   },
 
   // Mining
   claimMiningReward: async () => {
-    const response = await apiClient.post('/game/mining/claim/');
+    const response = await apiClient.post('/claim/');
     return response.data;
   },
 
   exchangeCurrency: async (amount: number) => {
-    const response = await apiClient.post('/game/mining/exchange/', { amount });
+    const response = await apiClient.post('/exchange/', { amount });
     return response.data;
   },
 
   // Cards
   getMyCards: async () => {
-    const response = await apiClient.get<PaginatedResponse<any>>('/game/cards/my/');
+    const response = await apiClient.get<PaginatedResponse<any>>('/my-cards/');
     return response.data.results;
   },
 
   equipCard: async (cardId: number, slot: number) => {
-    const response = await apiClient.post('/game/cards/equip/', { card_id: cardId, slot });
+    const response = await apiClient.post('/equip/', { card_id: cardId, slot });
     return response.data;
   },
 
   unequipCard: async (slot: number) => {
-    const response = await apiClient.post('/game/cards/unequip/', { slot });
+    const response = await apiClient.post('/unequip/', { slot });
     return response.data;
   },
 
   // Packs
   getPacks: async () => {
-    const response = await apiClient.get('/game/packs/');
+    const response = await apiClient.get('/packs/');
     return response.data;
   },
 
   openPack: async (packId: number) => {
-    const response = await apiClient.post('/game/packs/open/', { pack_id: packId });
+    const response = await apiClient.post('/open-pack/', { pack_id: packId });
     return response.data;
   },
 
   // Marketplace
   getMarketListings: async () => {
-    const response = await apiClient.get('/game/marketplace/listings/');
+    const response = await apiClient.get('/market/');
     return response.data;
   },
 
   listCard: async (cardId: number, price: number, currency: string) => {
-    const response = await apiClient.post('/game/marketplace/list/', { card_id: cardId, price, currency });
+    const response = await apiClient.post('/market/create/', { card_id: cardId, price, currency });
     return response.data;
   },
 
   buyListing: async (listingId: number) => {
-    const response = await apiClient.post('/game/marketplace/buy/', { listing_id: listingId });
+    const response = await apiClient.post(`/market/buy/${listingId}/`);
     return response.data;
   },
 
   // Leaderboard
   getLeaderboard: async () => {
-    const response = await apiClient.get('/game/leaderboard/');
+    const response = await apiClient.get('/leaderboard/');
     return response.data;
   },
 
   // Avatars
   getAvatars: async () => {
-    const response = await apiClient.get('/game/avatars/');
+    const response = await apiClient.get('/avatars/');
     return response.data;
   },
 };
