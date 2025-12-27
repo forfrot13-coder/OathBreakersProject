@@ -6,6 +6,10 @@ import { useGameStore } from '@/store/gameStore';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import CardGrid from '@/components/Card/CardGrid';
+import { apiFetchJson } from '@/lib/api';
+import { endpoints } from '@/lib/endpoints';
+import type { User } from '@/lib/types';
+import { getErrorMessage } from '@/lib/errorHandler';
 
 export default function ProfilePage() {
   const user = useAuthStore((state) => state.user);
@@ -38,25 +42,17 @@ export default function ProfilePage() {
   const handleUpdateProfile = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/profile/`, {
+      const data = await apiFetchJson<User>(endpoints.profile.me, {
         method: 'PUT',
-        headers: {
-          'Authorization': `Token ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ avatar_url: avatar }),
       });
 
-      if (!response.ok) {
-        throw new Error('خطا در بروزرسانی پروفایل');
-      }
-
-      const data = await response.json();
       setUser(data);
       setIsEditing(false);
       toast.success('پروفایل با موفقیت بروزرسانی شد! ✅');
-    } catch (error: any) {
-      toast.error(error.message || 'خطا در بروزرسانی پروفایل');
+    } catch (error) {
+      toast.error(getErrorMessage(error));
     } finally {
       setIsLoading(false);
     }

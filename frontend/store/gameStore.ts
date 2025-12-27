@@ -1,230 +1,334 @@
+'use client';
+
 import { create } from 'zustand';
+import { apiFetchJson } from '@/lib/api';
+import { endpoints } from '@/lib/endpoints';
+import type {
+  CardInstance,
+  Currency,
+  LeaderboardEntry,
+  MarketListing,
+  Pack,
+  Rarity,
+  Transaction,
+} from '@/lib/types';
 
-export type Rarity = 'COMMON' | 'RARE' | 'EPIC' | 'LEGENDARY';
-
-export interface Card {
-  id: number;
-  card_name: string;
-  image?: string;
-  mining_rate: number;
-  rarity: Rarity;
-  serial_number: number;
-  is_listed_in_market: boolean;
-}
-
-export interface MarketListing {
-  id: number;
-  card_instance: Card;
-  seller_name: string;
-  price: number;
-  currency: 'COINS' | 'GEMS' | 'FRAGMENTS';
-  created_at: string;
-  is_active: boolean;
-}
-
-export interface Pack {
-  id: number;
-  name: string;
-  description: string;
-  cost_currency: 'COINS' | 'GEMS';
-  cost: number;
-  guaranteed_rarity: Rarity;
-}
-
-export interface LeaderboardEntry {
-  rank: number;
-  username: string;
-  level: number;
-  total_cards: number;
-}
+export type { Currency, LeaderboardEntry, MarketListing, Pack, Rarity };
+export type Card = CardInstance;
 
 interface GameStore {
-  cards: Card[];
-  selectedCard: Card | null;
+  cards: CardInstance[];
+  selectedCard: CardInstance | null;
   marketListings: MarketListing[];
   packs: Pack[];
   leaderboard: LeaderboardEntry[];
+
+  transactions: Transaction[];
+  past: CardInstance[][];
+  future: CardInstance[][];
+
   isLoading: boolean;
   error: string | null;
+  isOnline: boolean;
 
   fetchCards: () => Promise<void>;
-  selectCard: (card: Card | null) => void;
-  updateCards: (cards: Card[]) => void;
-  
-  fetchMarketListings: () => Promise<void>;
+  selectCard: (card: CardInstance | null) => void;
+  updateCards: (cards: CardInstance[]) => void;
+
+  fetchMarketListings: (options?: { force?: boolean }) => Promise<void>;
   buyCard: (listingId: number) => Promise<void>;
-  listCard: (cardId: number, price: number, currency: 'COINS' | 'GEMS' | 'FRAGMENTS') => Promise<void>;
-  
+  listCard: (cardId: number, price: number, currency: Currency) => Promise<void>;
+
   fetchPacks: () => Promise<void>;
-  openPack: (packId: number) => Promise<Card[]>;
-  
+  openPack: (packId: number) => Promise<CardInstance[]>;
+
   fetchLeaderboard: () => Promise<void>;
-  
+
+  undo: () => void;
+  redo: () => void;
+
+  hydrateFromCache: () => void;
   clearError: () => void;
 }
 
-const getAuthHeader = () => {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-  return token ? { 'Authorization': `Token ${token}` } : {};
-};
+const STORAGE = {
+  cards: 'cache:cards:v1',
+  market: 'cache:market:v1',
+  packs: 'cache:packs:v1',
+  leaderboard: 'cache:leaderboard:v1',
+  tx: 'cache:tx:v1',
+} as const;
 
-export const useGameStore = create<GameStore>((set) => ({
-  cards: [],
-  selectedCard: null,
-  marketListings: [],
-  packs: [],
-  leaderboard: [],
-  isLoading: false,
-  error: null,
+const MARKET_TTL_MS = 60_000;
+const HISTORY_LIMIT = 20;
 
-  fetchCards: async () => {
-    set({ isLoading: true, error: null });
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/my-cards/`, {
-        headers: getAuthHeader(),
+function readCache<T>(key: string): { data: T; storedAt: number } | null {
+  if (typeof window === 'undefined') return null;
+  const raw = window.localStorage.getItem(key);
+  if (!raw) return null;
+
+  try {
+    return JSON.parse(raw) as { data: T; storedAt: number };
+  } catch {
+    window.localStorage.removeItem(key);
+    return null;
+  }
+}
+
+function writeCache<T>(key: string, data: T) {
+  if (typeof window === 'undefined') return;
+  window.localStorage.setItem(key, JSON.stringify({ data, storedAt: Date.now() }));
+}
+
+function addTx(tx: Omit<Transaction, 'id' | 'created_at'>): Transaction {
+  return {
+    id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    created_at: new Date().toISOString(),
+    ...tx,
+  };
+}
+
+export const useGameStore = create<GameStore>((set, get) => {
+  if (typeof window !== 'undefined') {
+    window.addEventListener('online', () => set({ isOnline: true }));
+    window.addEventListener('offline', () => set({ isOnline: false }));
+  }
+
+  return {
+    cards: [],
+    selectedCard: null,
+    marketListings: [],
+    packs: [],
+    leaderboard: [],
+    transactions: [],
+    past: [],
+    future: [],
+
+    isLoading: false,
+    error: null,
+    isOnline: typeof navigator !== 'undefined' ? navigator.onLine : true,
+
+    hydrateFromCache: () => {
+      const cachedCards = readCache<CardInstance[]>(STORAGE.cards);
+      const cachedMarket = readCache<MarketListing[]>(STORAGE.market);
+      const cachedPacks = readCache<Pack[]>(STORAGE.packs);
+      const cachedLeaderboard = readCache<LeaderboardEntry[]>(STORAGE.leaderboard);
+      const cachedTx = readCache<Transaction[]>(STORAGE.tx);
+
+      set({
+        cards: cachedCards?.data ?? get().cards,
+        marketListings: cachedMarket?.data ?? get().marketListings,
+        packs: cachedPacks?.data ?? get().packs,
+        leaderboard: cachedLeaderboard?.data ?? get().leaderboard,
+        transactions: cachedTx?.data ?? get().transactions,
       });
+    },
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch cards');
+    fetchCards: async () => {
+      set({ isLoading: true, error: null });
+
+      try {
+        const data = await apiFetchJson<CardInstance[]>(endpoints.cards.myCards, {
+          useCache: true,
+          cacheStorage: 'localStorage',
+          cacheTtlMs: 10_000,
+        });
+
+        set({ cards: data, isLoading: false });
+        writeCache(STORAGE.cards, data);
+      } catch (err) {
+        set({ isLoading: false, error: err instanceof Error ? err.message : 'Failed to fetch cards' });
+        throw err;
+      }
+    },
+
+    selectCard: (card) => set({ selectedCard: card }),
+
+    updateCards: (cards) => {
+      set((state) => {
+        const nextPast = [...state.past, state.cards].slice(-HISTORY_LIMIT);
+
+        writeCache(STORAGE.cards, cards);
+
+        return {
+          cards,
+          past: nextPast,
+          future: [],
+        };
+      });
+    },
+
+    fetchMarketListings: async (options) => {
+      const cached = readCache<MarketListing[]>(STORAGE.market);
+      const isFresh = cached ? Date.now() - cached.storedAt < MARKET_TTL_MS : false;
+
+      if (!options?.force && isFresh) {
+        set({ marketListings: cached!.data });
+        return;
       }
 
-      const data = await response.json();
-      set({ cards: data, isLoading: false });
-    } catch (error) {
-      set({ isLoading: false, error: 'Failed to fetch cards' });
-      throw error;
-    }
-  },
+      set({ isLoading: true, error: null });
+      try {
+        const data = await apiFetchJson<MarketListing[]>(endpoints.market.listings, {
+          useCache: true,
+          cacheStorage: 'localStorage',
+          cacheTtlMs: MARKET_TTL_MS,
+        });
 
-  selectCard: (card) => set({ selectedCard: card }),
-  updateCards: (cards) => set({ cards }),
-
-  fetchMarketListings: async () => {
-    set({ isLoading: true, error: null });
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/market/`, {
-        headers: getAuthHeader(),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch marketplace');
+        set({ marketListings: data, isLoading: false });
+        writeCache(STORAGE.market, data);
+      } catch (err) {
+        set({ isLoading: false, error: err instanceof Error ? err.message : 'Failed to fetch marketplace' });
+        throw err;
       }
+    },
 
-      const data = await response.json();
-      set({ marketListings: data, isLoading: false });
-    } catch (error) {
-      set({ isLoading: false, error: 'Failed to fetch marketplace' });
-      throw error;
-    }
-  },
+    buyCard: async (listingId) => {
+      set({ isLoading: true, error: null });
+      try {
+        await apiFetchJson<{ success?: boolean }>(endpoints.market.buy(listingId), {
+          method: 'POST',
+        });
 
-  buyCard: async (listingId) => {
-    set({ isLoading: true, error: null });
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/market/buy/${listingId}/`, {
-        method: 'POST',
-        headers: getAuthHeader(),
-      });
+        set((state) => ({
+          isLoading: false,
+          transactions: [
+            addTx({ type: 'BUY', description: `Buy listing #${listingId}` }),
+            ...state.transactions,
+          ].slice(0, 100),
+        }));
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to buy card');
+        writeCache(STORAGE.tx, get().transactions);
+      } catch (err) {
+        set({ isLoading: false, error: err instanceof Error ? err.message : 'Failed to buy card' });
+        throw err;
       }
+    },
 
-      set({ isLoading: false });
-    } catch (error) {
-      set({ isLoading: false, error: 'Failed to buy card' });
-      throw error;
-    }
-  },
+    listCard: async (cardId, price, currency) => {
+      set({ isLoading: true, error: null });
+      try {
+        await apiFetchJson<{ success?: boolean }>(endpoints.market.list, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ card_id: cardId, price, currency }),
+        });
 
-  listCard: async (cardId, price, currency) => {
-    set({ isLoading: true, error: null });
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/market/list/`, {
-        method: 'POST',
-        headers: {
-          ...getAuthHeader(),
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ card_id: cardId, price, currency }),
-      });
+        set((state) => ({
+          isLoading: false,
+          transactions: [
+            addTx({
+              type: 'LIST',
+              description: `List card #${cardId} for ${price} ${currency}`,
+              amount: price,
+              currency,
+            }),
+            ...state.transactions,
+          ].slice(0, 100),
+        }));
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to list card');
+        writeCache(STORAGE.tx, get().transactions);
+      } catch (err) {
+        set({ isLoading: false, error: err instanceof Error ? err.message : 'Failed to list card' });
+        throw err;
       }
+    },
 
-      set({ isLoading: false });
-    } catch (error) {
-      set({ isLoading: false, error: 'Failed to list card' });
-      throw error;
-    }
-  },
-
-  fetchPacks: async () => {
-    set({ isLoading: true, error: null });
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/packs/`, {
-        headers: getAuthHeader(),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch packs');
+    fetchPacks: async () => {
+      set({ isLoading: true, error: null });
+      try {
+        const data = await apiFetchJson<Pack[]>(endpoints.packs.list, {
+          useCache: true,
+          cacheStorage: 'localStorage',
+          cacheTtlMs: 60_000,
+        });
+        set({ packs: data, isLoading: false });
+        writeCache(STORAGE.packs, data);
+      } catch (err) {
+        set({ isLoading: false, error: err instanceof Error ? err.message : 'Failed to fetch packs' });
+        throw err;
       }
+    },
 
-      const data = await response.json();
-      set({ packs: data, isLoading: false });
-    } catch (error) {
-      set({ isLoading: false, error: 'Failed to fetch packs' });
-      throw error;
-    }
-  },
+    openPack: async (packId) => {
+      set({ isLoading: true, error: null });
+      try {
+        const data = await apiFetchJson<{ cards: CardInstance[] }>(endpoints.packs.open, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pack_id: packId }),
+        });
 
-  openPack: async (packId) => {
-    set({ isLoading: true, error: null });
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/open-pack/`, {
-        method: 'POST',
-        headers: {
-          ...getAuthHeader(),
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ pack_id: packId }),
-      });
+        set((state) => ({
+          isLoading: false,
+          transactions: [
+            addTx({ type: 'OPEN_PACK', description: `Open pack #${packId}` }),
+            ...state.transactions,
+          ].slice(0, 100),
+        }));
+        writeCache(STORAGE.tx, get().transactions);
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to open pack');
+        return data.cards;
+      } catch (err) {
+        set({ isLoading: false, error: err instanceof Error ? err.message : 'Failed to open pack' });
+        throw err;
       }
+    },
 
-      const data = await response.json();
-      set({ isLoading: false });
-      return data.cards;
-    } catch (error) {
-      set({ isLoading: false, error: 'Failed to open pack' });
-      throw error;
-    }
-  },
-
-  fetchLeaderboard: async () => {
-    set({ isLoading: true, error: null });
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/leaderboard/`, {
-        headers: getAuthHeader(),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch leaderboard');
+    fetchLeaderboard: async () => {
+      set({ isLoading: true, error: null });
+      try {
+        const data = await apiFetchJson<LeaderboardEntry[]>(endpoints.leaderboard.list, {
+          useCache: true,
+          cacheStorage: 'localStorage',
+          cacheTtlMs: 60_000,
+        });
+        set({ leaderboard: data, isLoading: false });
+        writeCache(STORAGE.leaderboard, data);
+      } catch (err) {
+        set({ isLoading: false, error: err instanceof Error ? err.message : 'Failed to fetch leaderboard' });
+        throw err;
       }
+    },
 
-      const data = await response.json();
-      set({ leaderboard: data, isLoading: false });
-    } catch (error) {
-      set({ isLoading: false, error: 'Failed to fetch leaderboard' });
-      throw error;
-    }
-  },
+    undo: () => {
+      set((state) => {
+        if (state.past.length === 0) return state;
 
-  clearError: () => set({ error: null }),
-}));
+        const previous = state.past[state.past.length - 1];
+        const nextPast = state.past.slice(0, -1);
+        const nextFuture = [state.cards, ...state.future].slice(0, HISTORY_LIMIT);
+
+        writeCache(STORAGE.cards, previous);
+
+        return {
+          ...state,
+          cards: previous,
+          past: nextPast,
+          future: nextFuture,
+        };
+      });
+    },
+
+    redo: () => {
+      set((state) => {
+        if (state.future.length === 0) return state;
+
+        const next = state.future[0];
+        const nextFuture = state.future.slice(1);
+        const nextPast = [...state.past, state.cards].slice(-HISTORY_LIMIT);
+
+        writeCache(STORAGE.cards, next);
+
+        return {
+          ...state,
+          cards: next,
+          past: nextPast,
+          future: nextFuture,
+        };
+      });
+    },
+
+    clearError: () => set({ error: null }),
+  };
+});

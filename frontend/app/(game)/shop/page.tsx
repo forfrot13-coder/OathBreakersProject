@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useGameStore, Pack } from '@/store/gameStore';
+import { useGameStore } from '@/store/gameStore';
+import type { Pack } from '@/store/gameStore';
 import { useAuthStore } from '@/store/authStore';
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
@@ -21,16 +22,16 @@ export default function ShopPage() {
   }, [fetchPacks]);
 
   const handleOpenPack = async () => {
-    if (!selectedPack) return;
+    if (!selectedPack) return [];
 
     setIsOpening(true);
     try {
-      await openPack(selectedPack.id);
+      const cards = await openPack(selectedPack.id);
       toast.success('پک با موفقیت باز شد! 🎉');
-      setIsModalOpen(false);
-      setSelectedPack(null);
-    } catch (error: any) {
-      toast.error(error.message || 'خطا در باز کردن پک');
+      return cards;
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : 'خطا در باز کردن پک');
+      throw error;
     } finally {
       setIsOpening(false);
     }
