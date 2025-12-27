@@ -66,14 +66,13 @@ class CardTemplateAdmin(admin.ModelAdmin):
 @admin.register(UserCard)
 class UserCardAdmin(admin.ModelAdmin):
     # اصلاح نام فیلد: user -> owner
-    list_display = ('id', 'template', 'serial_number', 'owner', 'is_listed') 
+    list_display = ('id', 'template', 'serial_number', 'owner', 'is_listed_in_market') 
     
-    # اصلاح جستجو: user__username -> owner__username
-    search_fields = ('template__name', 'owner__username')
+    # اصلاح جستجو: user__username -> owner__user__username
+    search_fields = ('template__name', 'owner__user__username')
     
-    # اصلاح فیلتر: is_listed_in_market -> is_listed (اگر مدل را تغییر دادید)
-    # اگر در مدل هنوز نامش is_listed_in_market است، اینجا هم همان را بنویسید
-    list_filter = ('is_listed', 'template__rarity') 
+    # اصلاح فیلتر: استفاده از فیلد صحیح
+    list_filter = ('is_listed_in_market', 'template__rarity') 
     
     # اصلاح raw_id: user -> owner
     raw_id_fields = ('owner', 'template') 
@@ -81,20 +80,25 @@ class UserCardAdmin(admin.ModelAdmin):
 @admin.register(MarketListing)
 class MarketListingAdmin(admin.ModelAdmin):
     # فیلدهای جدید: price, currency به جای price_gems
-    list_display = ('seller', 'card', 'price', 'currency', 'created_at')
-    list_filter = ('currency', 'created_at')
+    list_display = ('seller', 'get_card_name', 'price', 'currency', 'created_at', 'is_active')
+    list_filter = ('currency', 'created_at', 'is_active')
     actions = ['cancel_listings']
-    search_fields = ('seller__username', 'card__template__name')
+    search_fields = ('seller__user__username', 'card_instance__template__name')
+    
+    def get_card_name(self, obj):
+        return obj.card_instance.template.name if obj.card_instance else '-'
+    get_card_name.short_description = 'کارت'
 
     @admin.action(description='❌ لغو آگهی‌های انتخاب شده')
     def cancel_listings(self, request, queryset):
         for listing in queryset:
             # آزاد کردن کارت
-            card = listing.card
-            card.is_listed = False # نام فیلد در مدل UserCard باید is_listed باشد
+            card = listing.card_instance
+            card.is_listed_in_market = False
             card.save()
-            # حذف آگهی (چون کنسل شده)
-            listing.delete()
+            # غیرفعال کردن آگهی
+            listing.is_active = False
+            listing.save()
         self.message_user(request, "آگهی‌ها لغو شدند و کارت‌ها به مالکان برگشت.", messages.SUCCESS)
 
 @admin.register(Pack)

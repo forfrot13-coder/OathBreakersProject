@@ -18,19 +18,11 @@ class UserCardSerializer(serializers.ModelSerializer):
     mining_rate = serializers.IntegerField(
         source='template.mining_rate', read_only=True)
     rarity = serializers.CharField(source='template.rarity', read_only=True)
-    card_name = serializers.CharField(source='template.name', read_only=True)
-    image = serializers.ImageField(source='template.image', read_only=True)
-    mining_rate = serializers.IntegerField(
-        source='template.mining_rate', read_only=True)
-    rarity = serializers.CharField(source='template.rarity', read_only=True)
-
-    # 👇👇👇 این خط جدید را اضافه کنید 👇👇👇
     max_supply = serializers.IntegerField(
         source='template.max_supply', read_only=True)
 
     class Meta:
         model = UserCard
-        # 👇👇👇 max_supply را به لیست فیلدها اضافه کنید 👇👇👇
         fields = ['id', 'serial_number', 'card_name', 'image',
                   'mining_rate', 'rarity', 'is_listed_in_market', 'max_supply']
 
@@ -46,20 +38,6 @@ class PlayerProfileSerializer(serializers.ModelSerializer):
     slot_3 = UserCardSerializer(read_only=True)
 
     total_mining_rate = serializers.SerializerMethodField()
-
-    class Meta:
-        model = PlayerProfile
-        fields = ['username', 'coins', 'gems', 'vow_fragments', 'avatar_url',
-                  'slot_1', 'slot_2', 'slot_3', 'total_mining_rate']
-
-    def get_total_mining_rate(self, obj):
-        return obj.calculate_mining_rate()
-
-    def get_avatar_url(self, obj):
-        if obj.avatar and obj.avatar.image:
-            return obj.avatar.image.url
-        return None
-
     next_level_xp = serializers.SerializerMethodField()
     mining_multiplier = serializers.SerializerMethodField()
 
@@ -68,9 +46,16 @@ class PlayerProfileSerializer(serializers.ModelSerializer):
         fields = [
             'username', 'coins', 'gems', 'vow_fragments', 'avatar_url',
             'slot_1', 'slot_2', 'slot_3', 'total_mining_rate',
-            # فیلدهای جدید:
             'level', 'xp', 'next_level_xp', 'mining_multiplier'
         ]
+
+    def get_total_mining_rate(self, obj):
+        return obj.calculate_mining_rate()
+
+    def get_avatar_url(self, obj):
+        if obj.avatar and obj.avatar.image:
+            return obj.avatar.image.url
+        return None
 
     def get_next_level_xp(self, obj):
         return obj.get_next_level_xp()
@@ -97,23 +82,12 @@ class MarketListingSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MarketListing
-        fields = ['id', 'seller_username', 'card', 'price_gems', 'is_active']
+        fields = ['id', 'seller_username', 'card', 'price', 'currency', 'is_active', 'created_at']
 
 
 class PackSerializer(serializers.ModelSerializer):
     class Meta:
         model = Pack
-        fields = ['id', 'name', 'price', 'currency_type', 'image',
-                  'description',]  # فیلدهای جدید را اضافه کن
-
-
-class MarketListingSerializer(serializers.ModelSerializer):
-    # برای نمایش جزئیات کارت به جای فقط ID
-    card_details = UserCardSerializer(source='card', read_only=True)
-    seller_name = serializers.CharField(source='seller.username', read_only=True)
-
-    class Meta:
-        model = MarketListing
-        fields = ['id', 'seller_name', 'card', 'card_details', 'price', 'currency', 'created_at']
+        fields = ['id', 'name', 'price', 'currency_type', 'image', 'description']
 
 

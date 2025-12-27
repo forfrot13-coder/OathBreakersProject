@@ -34,23 +34,11 @@ class PlayerProfile(models.Model):
     # --- فیلد جدید برای سرعت بالا (Performance) ---
     current_mining_rate = models.PositiveIntegerField(default=0, verbose_name="نرخ استخراج فعلی")
 
-    def __str__(self):
-        return self.user.username
-
-    # متد هوشمند جدید: هم محاسبه می‌کند و هم ذخیره
-    def update_mining_rate(self):
-        total = 0
-        if self.slot_1: total += self.slot_1.template.mining_rate
-        if self.slot_2: total += self.slot_2.template.mining_rate
-        if self.slot_3: total += self.slot_3.template.mining_rate
-        
-        self.current_mining_rate = total
-        self.save()
-        return total
     level = models.PositiveIntegerField(default=1, verbose_name="سطح")
     xp = models.BigIntegerField(default=0, verbose_name="تجربه")
-    
-    # ... بقیه فیلدها ...
+
+    def __str__(self):
+        return self.user.username
 
     def get_next_level_xp(self):
         """محاسبه XP مورد نیاز برای رفتن به لول بعدی"""
@@ -139,46 +127,37 @@ class UserCard(models.Model):
 
 
 class MarketListing(models.Model):
+    CURRENCY_CHOICES = [
+        ('COINS', 'سکه'),
+        ('GEMS', 'الماس'),
+        ('FRAGMENTS', 'Vow Fragment'),
+    ]
+
     seller = models.ForeignKey(
         PlayerProfile, on_delete=models.CASCADE, related_name='listings')
-    card_instance = models.OneToOneField(UserCard, on_delete=models.CASCADE)
+    card_instance = models.OneToOneField(UserCard, on_delete=models.CASCADE, related_name='market_listing')
 
-    # قیمت آگهی (بر اساس الماس/Gems)
-    price_gems = models.PositiveIntegerField(
-        validators=[MinValueValidator(1)], verbose_name="قیمت (Gems)")
+    # قیمت آگهی
+    price = models.PositiveIntegerField(
+        validators=[MinValueValidator(1)], verbose_name="قیمت")
+    currency = models.CharField(max_length=10, choices=CURRENCY_CHOICES, default='GEMS', verbose_name="نوع ارز")
 
     created_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
 
-    def __str__(self):
-        return f"Sell {self.card_instance.template.name} for {self.price_gems} Gems"
-
-    # backward compatibility: some older code/migrations reference `price_vow`
-    @property
-    def price_vow(self):
-        return self.price_gems
-
-    @price_vow.setter
-    def price_vow(self, value):
-        self.price_gems = value
-
-
-class MarketListing(models.Model):
-    CURRENCY_CHOICES = [
-        ('COINS', 'Scoin'),
-        ('GEMS', 'Gem'),
-        ('FRAGMENTS', 'Vow Fragment'),
-    ]
-
-    seller = models.ForeignKey(User, on_delete=models.CASCADE, related_name='listings')
-    card = models.OneToOneField(UserCard, on_delete=models.CASCADE, related_name='market_listing')
-    price = models.PositiveIntegerField()
-    currency = models.CharField(max_length=10, choices=CURRENCY_CHOICES, default='COINS')
-    created_at = models.DateTimeField(auto_now_add=True)
-    
     # برای نمایش جدیدترین‌ها در ابتدا
     class Meta:
         ordering = ['-created_at']
 
     def __str__(self):
-        return f"{self.card.template.name} by {self.seller.username} for {self.price} {self.currency}"
+        return f"Sell {self.card_instance.template.name} for {self.price} {self.currency}"
+
+    # backward compatibility: some older code/migrations reference `price_gems`
+    @property
+    def price_gems(self):
+        return self.price if self.currency == 'GEMS' else 0
+
+    @price_gems.setter
+    def price_gems(self, value):
+        self.price = value
+        self.currency = 'GEMS'
