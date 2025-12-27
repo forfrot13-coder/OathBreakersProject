@@ -11,22 +11,10 @@
     <!-- Fonts -->
     <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" />
 
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Vazirmatn', 'system-ui', 'sans-serif'],
-                    },
-                },
-            },
-        }
-    </script>
-
-    <!-- Custom CSS -->
+    <!-- Tailwind CSS (Compiled with Tailwind CLI - Production Ready) -->
     <link rel="stylesheet" href="{% static 'game/css/tailwind.css' %}">
+    
+    <!-- Custom CSS -->
     <link rel="stylesheet" href="{% static 'game/css/styles.css' %}">
 
     {% block extra_head %}{% endblock %}
