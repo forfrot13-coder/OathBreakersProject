@@ -31,8 +31,12 @@ class PlayerProfileSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username', read_only=True)
     # آواتار را به صورت کامل می‌فرستیم تا عکسش را داشته باشیم
     avatar_url = serializers.SerializerMethodField()
+    avatar_id = serializers.SerializerMethodField()
 
-    # اطلاعات اسلات‌ها
+    # اطلاعات اسلات‌ها - به صورت آرایه برای frontend
+    slots = serializers.SerializerMethodField()
+    
+    # اطلاعات اسلات‌ها - فرمت قدیم برای سازگاری
     slot_1 = UserCardSerializer(read_only=True)
     slot_2 = UserCardSerializer(read_only=True)
     slot_3 = UserCardSerializer(read_only=True)
@@ -44,10 +48,22 @@ class PlayerProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = PlayerProfile
         fields = [
-            'username', 'coins', 'gems', 'vow_fragments', 'avatar_url',
-            'slot_1', 'slot_2', 'slot_3', 'total_mining_rate',
+            'username', 'coins', 'gems', 'vow_fragments', 'avatar_url', 'avatar_id',
+            'slot_1', 'slot_2', 'slot_3', 'slots', 'total_mining_rate',
             'level', 'xp', 'next_level_xp', 'mining_multiplier'
         ]
+
+    def get_slots(self, obj):
+        """بازگردانی اسلات‌ها به صورت آرایه برای استفاده آسان در frontend"""
+        slots_data = []
+        for slot_num in [1, 2, 3]:
+            slot_field = getattr(obj, f'slot_{slot_num}', None)
+            if slot_field:
+                slot_data = UserCardSerializer(slot_field).data
+                slot_data['slot'] = slot_num
+                slot_data['is_equipped'] = True
+                slots_data.append(slot_data)
+        return slots_data
 
     def get_total_mining_rate(self, obj):
         return obj.calculate_mining_rate()
@@ -55,6 +71,11 @@ class PlayerProfileSerializer(serializers.ModelSerializer):
     def get_avatar_url(self, obj):
         if obj.avatar and obj.avatar.image:
             return obj.avatar.image.url
+        return None
+
+    def get_avatar_id(self, obj):
+        if obj.avatar:
+            return obj.avatar.id
         return None
 
     def get_next_level_xp(self, obj):
@@ -76,13 +97,13 @@ class TokenSerializer(serializers.ModelSerializer):
 
 
 class MarketListingSerializer(serializers.ModelSerializer):
-    seller_username = serializers.CharField(
+    seller_name = serializers.CharField(
         source='seller.user.username', read_only=True)
-    card = UserCardSerializer(source='card_instance', read_only=True)
+    card_details = UserCardSerializer(source='card_instance', read_only=True)
 
     class Meta:
         model = MarketListing
-        fields = ['id', 'seller_username', 'card', 'price', 'currency', 'is_active', 'created_at']
+        fields = ['id', 'seller_name', 'card_details', 'price', 'currency', 'is_active', 'created_at']
 
 
 class PackSerializer(serializers.ModelSerializer):

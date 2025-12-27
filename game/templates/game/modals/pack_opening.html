@@ -47,14 +47,14 @@
         </div>
 
         <!-- دکمه بعدی -->
-        <button @click="currentCardIndex < cardsQueue.length ? nextCard() : closeOpeningModal()"
+        <button @click="currentCardIndex < (cardsQueue.length - 1) ? nextCard() : closeOpeningModal()"
                 class="bg-white text-black px-8 py-3 rounded-full font-bold hover:bg-gray-200 transition-transform active:scale-95 shadow-[0_0_20px_rgba(255,255,255,0.3)]">
-            <span x-show="currentCardIndex < cardsQueue.length">کارت بعدی ➔</span>
-            <span x-show="currentCardIndex >= cardsQueue.length">تمام شد ✓</span>
+            <span x-show="currentCardIndex < (cardsQueue.length - 1)">کارت بعدی ➔</span>
+            <span x-show="currentCardIndex >= (cardsQueue.length - 1)">تمام شد ✓</span>
         </button>
         
         <div class="text-gray-500 text-xs">
-            <span x-text="currentCardIndex"></span> / <span x-text="cardsQueue.length"></span>
+            <span x-text="currentCardIndex + 1"></span> / <span x-text="cardsQueue.length"></span>
         </div>
     </div>
 </div>

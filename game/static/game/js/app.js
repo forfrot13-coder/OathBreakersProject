@@ -38,10 +38,18 @@ document.addEventListener('alpine:init', () => {
 
         // سایر متغیرهای مورد انتظار در قالب
         showSlotSelector: false,
+        selectedCardIdForEquip: null,
         avatarList: [],
         settings: { username: '', password: '' },
         exchangeAmount: 1000,
         leaderboard: [],
+        
+        // Pack Opening Modal
+        openingModal: false,
+        animationStage: 'shaking',
+        openedCard: null,
+        cardsQueue: [],
+        currentCardIndex: 0,
 
         // --- Init (شروع برنامه) ---
         init() {
@@ -52,6 +60,14 @@ document.addEventListener('alpine:init', () => {
                 if (value === 'market') this.fetchPacks();
                 if (value === 'inventory') this.fetchMyCards();
                 if (value === 'blackmarket') this.fetchMarketListings();
+                if (value === 'leaderboard') this.fetchLeaderboard();
+                if (value === 'profile') {
+                    this.fetchAvatars();
+                    // تنظیمات اولیه از پروفایل
+                    this.settings.username = this.profile.username || '';
+                    this.settings.avatar_id = this.profile.avatar_id ?? null;
+                    this.settings.password = '';
+                }
             });
 
             // تایمر برای بروزرسانی خودکار پروفایل (هر 60 ثانیه)
@@ -71,9 +87,23 @@ document.addEventListener('alpine:init', () => {
         fetchProfile() {
             this.loading.update = true;
             fetch('/api/game/profile/me/')
-                .then(res => res.json())
+                .then(async (res) => {
+                    const data = await res.json();
+                    if (!res.ok) throw data;
+                    return data;
+                })
                 .then(data => {
-                    this.profile = data;
+                    this.profile = {
+                        ...this.profile,
+                        ...data,
+                        slots: Array.isArray(data.slots) ? data.slots : [],
+                    };
+
+                    if (this.currentTab === 'profile') {
+                        this.settings.username = data.username || '';
+                        this.settings.avatar_id = data.avatar_id ?? null;
+                    }
+
                     this.loading.update = false;
                 })
                 .catch(err => {
@@ -83,21 +113,36 @@ document.addEventListener('alpine:init', () => {
         },
 
         claimMining() {
+            if (this.loading.claim) return;
+            this.loading.claim = true;
+
             fetch('/api/game/claim/', {
                 method: 'POST',
                 headers: { 'X-CSRFToken': this.getCsrfToken() }
             })
-                .then(res => res.json())
+                .then(async (res) => {
+                    const data = await res.json();
+                    if (!res.ok) throw data;
+                    return data;
+                })
                 .then(data => {
                     if (data.message) alert(data.message);
-                    this.fetchProfile(); // آپدیت سکه‌ها
+                    this.fetchProfile();
+                })
+                .catch(err => {
+                    alert(err?.error || 'خطایی رخ داد.');
+                })
+                .finally(() => {
+                    this.loading.claim = false;
                 });
         },
 
         loadSettings() {
-            // فعلاً همان پروفایل را رفرش می‌کنیم
+            this.fetchAvatars();
             this.fetchProfile();
-            console.log("Settings loaded");
+            this.settings.username = this.profile.username || '';
+            this.settings.avatar_id = this.profile.avatar_id ?? null;
+            this.settings.password = '';
         },
 
         // --- Pack & Shop Methods ---
@@ -115,6 +160,12 @@ document.addEventListener('alpine:init', () => {
         openPack(packId) {
             if (!confirm("آیا مطمئن هستید که می‌خواهید این پک را باز کنید؟")) return;
 
+            this.openingModal = true;
+            this.animationStage = 'shaking';
+            this.openedCard = null;
+            this.cardsQueue = [];
+            this.currentCardIndex = 0;
+
             fetch('/api/game/open-pack/', {
                 method: 'POST',
                 headers: {
@@ -123,15 +174,30 @@ document.addEventListener('alpine:init', () => {
                 },
                 body: JSON.stringify({ pack_id: packId })
             })
-                .then(res => res.json())
+                .then(async (res) => {
+                    const data = await res.json();
+                    if (!res.ok) throw data;
+                    return data;
+                })
                 .then(data => {
-                    if (data.error) {
-                        alert(data.error);
-                    } else {
-                        alert(`تبریک! شما کارت ${data.card_name} را دریافت کردید!`);
-                        this.fetchProfile(); // کسر پول
-                        this.fetchMyCards(); // اضافه شدن کارت
+                    if (!Array.isArray(data.cards) || data.cards.length === 0) {
+                        throw { error: 'کارت دریافت نشد. لطفاً دوباره تلاش کنید.' };
                     }
+
+                    this.cardsQueue = data.cards;
+                    this.currentCardIndex = 0;
+
+                    setTimeout(() => {
+                        this.openedCard = this.cardsQueue[0];
+                        this.animationStage = 'flipped';
+                    }, 1200);
+
+                    this.fetchProfile();
+                    this.fetchMyCards();
+                })
+                .catch(err => {
+                    this.closeOpeningModal();
+                    alert(err?.error || 'خطایی رخ داد.');
                 });
         },
 
@@ -140,8 +206,15 @@ document.addEventListener('alpine:init', () => {
             fetch('/api/game/my-cards/')
                 .then(res => res.json())
                 .then(data => {
-                    this.myCards = data;
-                }).catch(err => console.error(err));
+                    const equippedIds = new Set(
+                        (this.profile?.slots || []).map(s => s.id)
+                    );
+                    this.myCards = (Array.isArray(data) ? data : []).map(card => ({
+                        ...card,
+                        is_equipped: equippedIds.has(card.id),
+                    }));
+                })
+                .catch(err => console.error(err));
         },
 
         equipCard(cardId, slotNumber) {
@@ -151,7 +224,7 @@ document.addEventListener('alpine:init', () => {
                     'Content-Type': 'application/json',
                     'X-CSRFToken': this.getCsrfToken()
                 },
-                body: JSON.stringify({ card_id: cardId, slot: slotNumber })
+                body: JSON.stringify({ card_id: cardId, slot_number: slotNumber })
             })
                 .then(res => res.json())
                 .then(data => {
@@ -179,11 +252,11 @@ document.addEventListener('alpine:init', () => {
                         seller_name: item.seller_name,
                         price: item.price,
                         currency: item.currency,
-                        card_name: item.card_details.template.name,
-                        card_image: item.card_details.template.image, // فرض بر این است که سریالایزر این را برمی‌گرداند
-                        card_rarity: item.card_details.template.rarity,
-                        mining_rate: item.card_details.template.mining_rate,
-                        time_ago: this.formatTimeAgo(item.created_at) // تابع کمکی زمان
+                        card_name: item.card_details?.card_name || 'Unknown',
+                        card_image: item.card_details?.image || null,
+                        card_rarity: item.card_details?.rarity || 'COMMON',
+                        mining_rate: item.card_details?.mining_rate || 0,
+                        time_ago: this.formatTimeAgo(item.created_at)
                     }));
                     this.loading.update = false;
                 })
@@ -296,6 +369,173 @@ document.addEventListener('alpine:init', () => {
             if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} دقیقه پیش`;
             if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} ساعت پیش`;
             return `${Math.floor(diffInSeconds / 86400)} روز پیش`;
+        },
+
+        // --- Inventory Card Actions ---
+        selectCardAction(cardId) {
+            const card = this.myCards.find(c => c.id === cardId);
+            if (!card) return;
+
+            // اگر کارت لیست شده در بازار است
+            if (card.is_listed_in_market) {
+                alert('این کارت در بازار سیاه لیست شده است و قابل استفاده نیست.');
+                return;
+            }
+
+            // نمایش منوی انتخاب عملیات
+            const action = confirm('آیا می‌خواهید این کارت را تجهیز کنید؟\n\nOK = تجهیز\nCancel = فروش');
+            
+            if (action) {
+                // تجهیز کارت
+                this.selectedCardIdForEquip = cardId;
+                this.showSlotSelector = true;
+            } else {
+                // فروش کارت
+                this.openSellModal(card);
+            }
+        },
+
+        equipToSlot(slotNumber) {
+            if (!this.selectedCardIdForEquip) {
+                alert('لطفاً ابتدا یک کارت انتخاب کنید.');
+                return;
+            }
+
+            this.equipCard(this.selectedCardIdForEquip, slotNumber);
+            this.showSlotSelector = false;
+            this.selectedCardIdForEquip = null;
+        },
+
+        // --- Pack Opening Modal Functions ---
+        closeOpeningModal() {
+            this.openingModal = false;
+            this.animationStage = 'shaking';
+            this.openedCard = null;
+            this.cardsQueue = [];
+            this.currentCardIndex = 0;
+        },
+
+        nextCard() {
+            if (this.currentCardIndex < this.cardsQueue.length - 1) {
+                this.currentCardIndex++;
+                this.animationStage = 'shaking';
+                setTimeout(() => {
+                    this.openedCard = this.cardsQueue[this.currentCardIndex];
+                    this.animationStage = 'flipped';
+                }, 1000);
+            } else {
+                this.closeOpeningModal();
+            }
+        },
+
+        // --- Profile & Settings Methods ---
+        updateProfile() {
+            this.loading.update = true;
+            fetch('/api/game/profile/update/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': this.getCsrfToken()
+                },
+                body: JSON.stringify({
+                    username: this.settings.username,
+                    password: this.settings.password,
+                    avatar_id: this.settings.avatar_id
+                })
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.error) {
+                        alert('خطا: ' + data.error);
+                    } else {
+                        alert('پروفایل با موفقیت بروزرسانی شد!');
+                        this.fetchProfile();
+                        this.settings.password = ''; // پاک کردن فیلد پسورد
+                    }
+                    this.loading.update = false;
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert('خطایی رخ داد.');
+                    this.loading.update = false;
+                });
+        },
+
+        fetchAvatars() {
+            fetch('/api/game/avatars/')
+                .then(res => res.json())
+                .then(data => {
+                    this.avatarList = data;
+                })
+                .catch(err => console.error(err));
+        },
+
+        // --- Exchange Methods ---
+        convertCoins() {
+            if (!this.exchangeAmount || this.exchangeAmount < 1000) {
+                alert('حداقل مقدار 1000 سکه است.');
+                return;
+            }
+
+            fetch('/api/game/exchange/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': this.getCsrfToken()
+                },
+                body: JSON.stringify({ coins: this.exchangeAmount })
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.error) {
+                        alert('خطا: ' + data.error);
+                    } else {
+                        alert(data.message);
+                        this.fetchProfile(); // آپدیت موجودی
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    alert('خطایی رخ داد.');
+                });
+        },
+
+        useMaxExchange() {
+            // محاسبه حداکثر مقدار قابل تبدیل (به مضرب 1000)
+            const maxCoins = Math.floor(this.profile.coins / 1000) * 1000;
+            if (maxCoins < 1000) {
+                alert('شما حداقل 1000 سکه ندارید.');
+                return;
+            }
+            this.exchangeAmount = maxCoins;
+            this.convertCoins();
+        },
+
+        // --- Leaderboard Methods ---
+        fetchLeaderboard() {
+            fetch('/api/game/leaderboard/')
+                .then(res => res.json())
+                .then(data => {
+                    this.leaderboard = data;
+                })
+                .catch(err => console.error(err));
+        },
+
+        // --- Logout Method ---
+        logout() {
+            if (!confirm('آیا می‌خواهید از حساب خود خارج شوید؟')) return;
+
+            fetch('/api/game/auth/logout/', {
+                method: 'POST',
+                headers: { 'X-CSRFToken': this.getCsrfToken() }
+            })
+                .then(() => {
+                    window.location.href = '/';
+                })
+                .catch(err => {
+                    console.error(err);
+                    window.location.href = '/';
+                });
         }
 
     }));
