@@ -1,6 +1,6 @@
 # Oathbreakers - Trading Card Game
 
-A Django-based trading card game with REST API backend and modern frontend.
+A Django-based trading card game with REST API backend and modern Next.js frontend.
 
 ## 🚀 Quick Start
 
@@ -41,6 +41,50 @@ python manage.py runserver
 **✨ No environment variables needed for development!** The application will use sensible defaults.
 
 Visit: `http://localhost:8000/`
+
+---
+
+## 🎨 Frontend Setup (Next.js)
+
+This project includes a modern Next.js 14 frontend with TypeScript and Tailwind CSS.
+
+### Frontend Installation
+
+```bash
+cd frontend
+npm install
+cp .env.local.example .env.local
+```
+
+### Run Frontend Development Server
+
+```bash
+npm run dev
+```
+
+Visit: `http://localhost:3000/`
+
+### Frontend Features
+
+- **Modern UI**: Built with Next.js 14, TypeScript, and Tailwind CSS
+- **State Management**: Zustand for efficient state management
+- **Animations**: Framer Motion for smooth 3D animations
+- **API Integration**: Axios wrapper with automatic token handling
+- **Responsive Design**: Mobile-first approach with full responsiveness
+- **Dark Theme**: Gaming-themed dark UI throughout
+
+### Frontend Pages
+
+- `/login` - User authentication
+- `/register` - User registration
+- `/game/dashboard` - Main dashboard with mining widget
+- `/game/inventory` - Card inventory management
+- `/game/marketplace` - Buy and sell cards
+- `/game/shop` - Purchase card packs
+- `/game/profile` - User profile and stats
+- `/game/leaderboard` - Player rankings
+
+For detailed frontend documentation, see [frontend/README.md](frontend/README.md).
 
 ---
 
