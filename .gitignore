@@ -5,6 +5,8 @@ __pycache__/
 *.pyd
 db.sqlite3
 .env
+.env.local
+.env.*.local
 media/
 *.log
 coverage/
