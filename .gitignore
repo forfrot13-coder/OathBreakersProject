@@ -22,3 +22,5 @@ node_modules/
 game/static/game/dist/
 game/static/game/css/tailwind.css
 
+# Test files
+cookies.txt
