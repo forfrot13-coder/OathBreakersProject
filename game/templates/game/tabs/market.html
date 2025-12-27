@@ -3,7 +3,7 @@
 <div x-show="currentTab === 'market'" x-cloak x-transition.opacity.duration.300ms>
     <div class="flex justify-between items-center mb-4">
         <h2 class="text-xl font-bold text-purple-400">فروشگاه پک‌ها</h2>
-        <button @click="fetchPacks()" class="text-xs bg-gray-800 px-3 py-1 rounded-full border border-gray-600 hover:bg-gray-700">
+        <button @click="fetchPacks()" class="text-xs bg-gray-800 px-3 py-1 rounded-full border border-gray-600 hover:bg-gray-700 btn-3d">
             بروزرسانی
         </button>
     </div>
@@ -13,7 +13,7 @@
             <div class="relative group">
 
                 <div @click="openPack(pack.id)"
-                    class="bg-gradient-to-br from-gray-900 to-black border border-purple-800 rounded-2xl p-4 pt-8 text-center cursor-pointer hover:border-purple-500 active:scale-95 transition-all duration-200 overflow-hidden shadow-lg h-full flex flex-col justify-between">
+                    class="pack-hover-3d bg-gradient-to-br from-gray-900 to-black border border-purple-800 rounded-2xl p-4 pt-8 text-center cursor-pointer hover:border-purple-500 active:scale-95 transition-all duration-200 overflow-hidden shadow-lg h-full flex flex-col justify-between">
 
                     <div class="h-20 mb-2 flex items-center justify-center">
                         <template x-if="pack.image">
@@ -21,7 +21,7 @@
                                 class="w-full h-full object-contain drop-shadow-md group-hover:scale-110 transition-transform duration-300">
                         </template>
                         <template x-if="!pack.image">
-                            <span class="text-5xl drop-shadow-lg">🔮</span>
+                            <span class="text-5xl drop-shadow-lg float-3d">🔮</span>
                         </template>
                     </div>
 
@@ -32,10 +32,10 @@
                             <span class="font-bold text-white text-sm" x-text="pack.price"></span>
 
                             <template x-if="pack.currency_type === 'GEMS'">
-                                <img src="{% static 'game/images/icon_gem.png' %}" class="w-4 h-4">
+                                <img src="{% static 'game/images/icon_gem.png' %}" class="w-4 h-4 float-3d">
                             </template>
                             <template x-if="pack.currency_type === 'COINS'">
-                                <img src="{% static 'game/images/icon_coin.png' %}" class="w-4 h-4">
+                                <img src="{% static 'game/images/icon_coin.png' %}" class="w-4 h-4 float-3d">
                             </template>
                         </div>
                     </div>
