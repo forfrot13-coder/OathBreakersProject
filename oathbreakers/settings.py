@@ -17,18 +17,47 @@ import os
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
+# ============================================================
+# ENVIRONMENT DETECTION
+# ============================================================
+# Set ENVIRONMENT=production in production to enable strict mode
+ENVIRONMENT = os.environ.get('ENVIRONMENT', 'development')  # development, staging, production
+IS_PRODUCTION = ENVIRONMENT == 'production'
 
+
+# ============================================================
+# SECRET KEY
+# ============================================================
 # SECURITY WARNING: keep the secret key used in production secret!
-# Read secret key and debug from environment for safety in production.
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
-if not SECRET_KEY:
-    raise ValueError("DJANGO_SECRET_KEY environment variable must be set")
+if IS_PRODUCTION:
+    # Production: SECRET_KEY is REQUIRED
+    SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
+    if not SECRET_KEY:
+        raise ValueError(
+            "ERROR: DJANGO_SECRET_KEY environment variable must be set in production!\n"
+            "Generate one with: python -c 'from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())'"
+        )
+else:
+    # Development: Use a default insecure key (can be overridden via env var)
+    SECRET_KEY = os.environ.get(
+        'DJANGO_SECRET_KEY',
+        'django-insecure-dev-only-zxcv1234asdfqwerty9876poiuytrewqasdfghjkl'
+    )
 
+
+# ============================================================
+# DEBUG
+# ============================================================
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == 'True'
+if IS_PRODUCTION:
+    DEBUG = False  # Always False in production
+else:
+    DEBUG = os.environ.get('DJANGO_DEBUG', 'True') == 'True'
 
+
+# ============================================================
+# ALLOWED HOSTS
+# ============================================================
 # In production set this to your domain(s) via environment or settings override
 ALLOWED_HOSTS = os.environ.get(
     'DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
@@ -81,16 +110,27 @@ TEMPLATES = [
 WSGI_APPLICATION = 'oathbreakers.wsgi.application'
 
 
-# Database
+# ============================================================
+# DATABASE
+# ============================================================
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
+
+# Database password validation
+if IS_PRODUCTION:
+    # Production: POSTGRES_PASSWORD is REQUIRED
+    db_password = os.environ.get('POSTGRES_PASSWORD')
+    if not db_password:
+        raise ValueError("ERROR: POSTGRES_PASSWORD environment variable must be set in production!")
+else:
+    # Development: Use default password (can be overridden via env var)
+    db_password = os.environ.get('POSTGRES_PASSWORD', 'mehran9731')
 
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': os.environ.get('POSTGRES_DB', 'oathbearkers_db'),
         'USER': os.environ.get('POSTGRES_USER', 'postgres'),
-        # do not hardcode password in repo; read from environment in production
-        'PASSWORD': os.environ.get('POSTGRES_PASSWORD', 'mehran9731'),
+        'PASSWORD': db_password,
         'HOST': os.environ.get('POSTGRES_HOST', '127.0.0.1'),
         'PORT': os.environ.get('POSTGRES_PORT', '5432'),
     }
