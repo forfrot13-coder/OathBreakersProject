@@ -1,6 +1,6 @@
 # Oathbreakers - Trading Card Game
 
-A Django-based trading card game with REST API backend and modern Next.js frontend.
+A full-stack Django trading card game with embedded React frontend using Tailwind CSS, Framer Motion, and Zustand state management.
 
 ## 🚀 Quick Start
 
@@ -18,22 +18,36 @@ python3 -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 ```
 
-#### 3. Install Dependencies
+#### 3. Install Python Dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
-#### 4. Run Migrations
+#### 4. Install Node.js Dependencies
+```bash
+npm install
+```
+
+#### 5. Build Frontend Assets
+```bash
+# Build CSS (Tailwind)
+npm run build:css
+
+# Or watch for changes during development
+npm run dev
+```
+
+#### 6. Run Migrations
 ```bash
 python manage.py migrate
 ```
 
-#### 5. Create Superuser
+#### 7. Create Superuser
 ```bash
 python manage.py createsuperuser
 ```
 
-#### 6. Run Development Server
+#### 8. Run Development Server
 ```bash
 python manage.py runserver
 ```
@@ -41,50 +55,6 @@ python manage.py runserver
 **✨ No environment variables needed for development!** The application will use sensible defaults.
 
 Visit: `http://localhost:8000/`
-
----
-
-## 🎨 Frontend Setup (Next.js)
-
-This project includes a modern Next.js 14 frontend with TypeScript and Tailwind CSS.
-
-### Frontend Installation
-
-```bash
-cd frontend
-npm install
-cp .env.local.example .env.local
-```
-
-### Run Frontend Development Server
-
-```bash
-npm run dev
-```
-
-Visit: `http://localhost:3000/`
-
-### Frontend Features
-
-- **Modern UI**: Built with Next.js 14, TypeScript, and Tailwind CSS
-- **State Management**: Zustand for efficient state management
-- **Animations**: Framer Motion for smooth 3D animations
-- **API Integration**: Axios wrapper with automatic token handling
-- **Responsive Design**: Mobile-first approach with full responsiveness
-- **Dark Theme**: Gaming-themed dark UI throughout
-
-### Frontend Pages
-
-- `/login` - User authentication
-- `/register` - User registration
-- `/game/dashboard` - Main dashboard with mining widget
-- `/game/inventory` - Card inventory management
-- `/game/marketplace` - Buy and sell cards
-- `/game/shop` - Purchase card packs
-- `/game/profile` - User profile and stats
-- `/game/leaderboard` - Player rankings
-
-For detailed frontend documentation, see [frontend/README.md](frontend/README.md).
 
 ---
 
@@ -127,24 +97,30 @@ cp .env.example .env
 #### 1. Install Dependencies
 ```bash
 pip install -r requirements.txt
+npm install
 ```
 
-#### 2. Run Migrations
+#### 2. Build Frontend Assets
+```bash
+npm run build
+```
+
+#### 3. Run Migrations
 ```bash
 python manage.py migrate
 ```
 
-#### 3. Collect Static Files
+#### 4. Collect Static Files
 ```bash
 python manage.py collectstatic --noinput
 ```
 
-#### 4. Create Superuser
+#### 5. Create Superuser
 ```bash
 python manage.py createsuperuser
 ```
 
-#### 5. Run with Production Server
+#### 6. Run with Production Server
 ```bash
 gunicorn oathbreakers.wsgi:application --bind 0.0.0.0:8000
 ```
@@ -184,18 +160,88 @@ oathbreakers/
 ├── game/                   # Main game application
 │   ├── models.py          # Database models (cards, profiles, etc.)
 │   ├── serializers.py     # DRF serializers
-│   ├── views.py           # API views
+│   ├── views.py           # API views & page templates
 │   ├── urls.py            # URL routing
 │   ├── templates/         # HTML templates
-│   └── static/            # CSS, JS, images
+│   │   └── game/
+│   │       └── base.html  # Main React SPA template
+│   └── static/           # Frontend assets
+│       └── game/
+│           ├── css/       # Stylesheets
+│           ├── js/        # React components & logic
+│           └── dist/      # Built JavaScript bundles
 ├── oathbreakers/          # Project settings
 │   ├── settings.py        # Django settings
 │   ├── urls.py            # Root URL configuration
 │   └── wsgi.py            # WSGI entry point
 ├── manage.py              # Django management script
 ├── requirements.txt       # Python dependencies
+├── package.json          # Node.js dependencies
+├── webpack.config.js     # Webpack configuration
+├── tailwind.config.js    # Tailwind CSS configuration
+├── tsconfig.json         # TypeScript configuration
 ├── .env.example          # Example environment variables
-└── README.md             # This file
+└── README.md            # This file
+```
+
+---
+
+## 🎨 Frontend Architecture
+
+### Tech Stack
+- **React 18** - UI library
+- **TypeScript** - Type safety
+- **Tailwind CSS** - Utility-first CSS framework
+- **Framer Motion** - Animation library
+- **Zustand** - State management
+- **Axios** - HTTP client
+
+### Frontend Structure
+```
+game/static/game/js/
+├── index.tsx             # Application entry point
+├── App.tsx               # Main app component with routing
+├── api.ts                # API client with interceptors
+├── store.ts              # Zustand stores (auth, game, notifications)
+├── utils.ts              # Utility functions
+├── types.ts              # TypeScript type definitions
+├── components/
+│   ├── Card.tsx          # Card display component
+│   ├── Button.tsx        # Button component
+│   ├── Notification.tsx   # Toast notifications
+│   └── Icons.tsx         # Icon components
+└── pages/
+    ├── Dashboard.tsx      # Main dashboard
+    ├── Inventory.tsx      # Card inventory
+    ├── Marketplace.tsx    # Black market
+    ├── Shop.tsx          # Card pack shop
+    ├── Profile.tsx       # User profile
+    ├── Leaderboard.tsx   # Player rankings
+    ├── Login.tsx         # Login page
+    └── Register.tsx      # Registration page
+```
+
+### Building the Frontend
+
+#### Development
+```bash
+# Watch mode - rebuilds CSS on changes
+npm run dev
+
+# Watch JavaScript only
+npm run watch:js
+```
+
+#### Production
+```bash
+# Build all assets
+npm run build
+
+# Build CSS only
+npm run build:css
+
+# Build JS only
+npm run build:js
 ```
 
 ---
@@ -206,7 +252,7 @@ oathbreakers/
 - **Card System**: Common, Rare, Epic, and Legendary cards
 - **Pack Opening**: Buy and open card packs with different rarities
 - **Mining System**: Claim mining rewards and exchange currencies
-- **Marketplace**: List and buy cards from other players
+- **Marketplace**: List and buy cards with Vow Fragments
 - **Inventory Management**: View and manage your card collection
 - **Leaderboard**: Compete with other players
 
@@ -214,6 +260,7 @@ oathbreakers/
 
 ## 🛠️ Development Commands
 
+### Python/Django
 ```bash
 # Run development server
 python manage.py runserver
@@ -234,6 +281,21 @@ python manage.py shell
 python manage.py check
 ```
 
+### Node.js/Frontend
+```bash
+# Install dependencies
+npm install
+
+# Development (watch CSS)
+npm run dev
+
+# Build for production
+npm run build
+
+# Build CSS only
+npm run build:css
+```
+
 ---
 
 ## 🧪 Testing
@@ -251,12 +313,23 @@ coverage report
 
 ## 📦 Dependencies
 
+### Python
 - **Django 5.2.9**: Web framework
 - **Django REST Framework**: REST API toolkit
 - **PostgreSQL**: Database (psycopg2-binary)
 - **Pillow**: Image processing
 
 See `requirements.txt` for full list.
+
+### Node.js
+- **react**: UI library
+- **typescript**: Type safety
+- **tailwindcss**: CSS framework
+- **framer-motion**: Animations
+- **zustand**: State management
+- **axios**: HTTP client
+
+See `package.json` for full list.
 
 ---
 
@@ -278,6 +351,24 @@ See `requirements.txt` for full list.
 
 ---
 
+## 🚀 Deployment Checklist
+
+- [ ] Set `ENVIRONMENT=production`
+- [ ] Set secure `DJANGO_SECRET_KEY`
+- [ ] Set `DJANGO_DEBUG=False`
+- [ ] Configure `DJANGO_ALLOWED_HOSTS`
+- [ ] Set strong database password
+- [ ] Run `npm install`
+- [ ] Run `npm run build` (build frontend assets)
+- [ ] Run `python manage.py migrate`
+- [ ] Run `python manage.py collectstatic`
+- [ ] Use production WSGI server (gunicorn/uwsgi)
+- [ ] Configure HTTPS
+- [ ] Set up proper logging
+- [ ] Configure backup strategy
+
+---
+
 ## 📝 License
 
 [Your License Here]
@@ -293,3 +384,4 @@ See `requirements.txt` for full list.
 ## 📧 Contact
 
 [Contact Information Here]
+
