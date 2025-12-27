@@ -50,7 +50,10 @@ export interface UserProfile {
   level: number;
   current_mining_rate: number;
   avatar_url?: string;
+  total_cards: number;
+  rank: number;
   xp?: number;
+  created_at?: string;
 }
 
 export interface User {
@@ -58,6 +61,7 @@ export interface User {
   username: string;
   email?: string;
   profile: UserProfile;
+  created_at: string;
 }
 
 export interface Card {
@@ -90,6 +94,12 @@ export interface Equipment {
   level?: number;
   bonus_mining_rate?: number;
   bonus_xp_rate?: number;
+}
+
+export interface EquipmentSlot {
+  slot: 1 | 2 | 3;
+  card?: CardInstance;
+  mining_rate_bonus: number;
 }
 
 export interface Pack {

@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { useGameStore } from '@/store/gameStore';
-import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import CardGrid from '@/components/Card/CardGrid';
 import CardDisplay from '@/components/Game/Card/CardDisplay';

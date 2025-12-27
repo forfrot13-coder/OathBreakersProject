@@ -6,11 +6,16 @@ import { endpoints } from '@/lib/endpoints';
 import type { AuthResponse, User } from '@/lib/types';
 import { isValidPassword, isValidUsername } from '@/lib/utils';
 
+interface AuthError {
+  code: 'INVALID_CREDENTIALS' | 'USER_EXISTS' | 'SERVER_ERROR' | 'NETWORK_ERROR';
+  message: string;
+}
+
 interface AuthStore {
   user: User | null;
   token: string | null;
   isLoading: boolean;
-  error: string | null;
+  error: AuthError | null;
 
   deviceToken: string | null;
   lastLoginTime: string | null;
@@ -187,10 +192,13 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       const lockoutUntil = attempts >= MAX_FAILED_ATTEMPTS ? new Date(Date.now() + LOCKOUT_MINUTES * 60 * 1000).toISOString() : null;
 
       set({
-        isLoading: false,
-        error: err instanceof Error ? err.message : 'خطا در ورود',
-        failedLoginAttempts: attempts,
-        lockoutUntil,
+       isLoading: false,
+       error: {
+         code: 'INVALID_CREDENTIALS',
+         message: err instanceof Error ? err.message : 'خطا در ورود'
+       },
+       failedLoginAttempts: attempts,
+       lockoutUntil,
       });
 
       persist({
@@ -246,7 +254,13 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
         lockoutUntil: null,
       });
     } catch (err) {
-      set({ isLoading: false, error: err instanceof Error ? err.message : 'خطا در ثبت‌نام' });
+      set({
+       isLoading: false,
+       error: {
+         code: 'SERVER_ERROR',
+         message: err instanceof Error ? err.message : 'خطا در ثبت‌نام'
+       }
+      });
       throw err;
     }
   },

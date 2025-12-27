@@ -26,7 +26,7 @@ export default function Sidebar() {
     <aside className="sidebar hidden lg:block w-64 bg-secondary/50 border-r border-primary/20 h-[calc(100vh-4rem)] sticky top-16 overflow-y-auto">
       <div className="p-4">
         <nav className="space-y-2">
-          {navItems.map((item, index) => {
+          {navItems.map((item) => {
             const isActive = pathname === item.href;
 
             return (

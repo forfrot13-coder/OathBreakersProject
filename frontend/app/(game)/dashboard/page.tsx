@@ -78,8 +78,8 @@ export default function DashboardPage() {
               👤
             </div>
             <div>
-              <h1 className="text-3xl font-bold mb-1">👋 خوش آمدید، {user.username}!</h1>
-              <p className="text-muted">سطح {user.profile.level} • نرخ استخراج {user.profile.current_mining_rate}/ساعت</p>
+              <h1 className="text-3xl font-bold mb-1">👋 خوش آمدید، {user?.username ?? 'کاربر'}!</h1>
+              <p className="text-muted">سطح {user?.profile.level ?? 1} • نرخ استخراج {user?.profile.current_mining_rate ?? 0}/ساعت</p>
             </div>
           </div>
 

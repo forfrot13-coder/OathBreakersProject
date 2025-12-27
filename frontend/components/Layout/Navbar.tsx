@@ -75,9 +75,9 @@ export default function Navbar() {
               {/* Currency Display */}
               <div className="hidden lg:block">
                 <CurrencyDisplay
-                  coins={user.profile.coins}
-                  gems={user.profile.gems}
-                  fragments={user.profile.vow_fragments}
+                  coins={user?.profile?.coins ?? 0}
+                  gems={user?.profile?.gems ?? 0}
+                  fragments={user?.profile?.vow_fragments ?? 0}
                   compact
                 />
               </div>
@@ -85,8 +85,8 @@ export default function Navbar() {
               {/* User Menu */}
               <div className="flex items-center gap-3">
                 <div className="text-right">
-                  <div className="font-semibold text-sm">{user.username}</div>
-                  <div className="text-xs text-muted">سطح {user.profile.level}</div>
+                  <div className="font-semibold text-sm">{user?.username ?? 'کاربر'}</div>
+                  <div className="text-xs text-muted">سطح {user?.profile?.level ?? 1}</div>
                 </div>
 
                 <motion.button
