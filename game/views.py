@@ -1,4 +1,4 @@
-from django.db import models, transaction
+from django.db import models, transaction, IntegrityError
 from django.db.models import Q
 from django.utils import timezone
 from django.contrib.auth import authenticate, login, logout
@@ -321,7 +321,8 @@ def list_card_for_sale(request):
         MarketListing.objects.create(
             seller=profile,
             card_instance=card,
-            price_gems=price
+            price=price,
+            currency='GEMS'
         )
 
     return Response({'message': 'کارت شما در مارکت قرار گرفت.'})
@@ -357,18 +358,30 @@ def buy_card(request):
             return Response({'error': 'شما نمی‌توانید کارت خودتان را بخرید!'}, status=400)
 
         # چک کردن موجودی خریدار
-        if buyer_profile.gems < listing.price_gems:
-            return Response({'error': 'الماس کافی ندارید.'}, status=400)
+        cost = listing.price
+        if listing.currency == 'GEMS':
+            if buyer_profile.gems < cost:
+                return Response({'error': 'الماس کافی ندارید.'}, status=400)
+            buyer_profile.gems -= cost
+            seller_profile = listing.seller
+            seller_profile.gems += cost
+        elif listing.currency == 'COINS':
+            if buyer_profile.coins < cost:
+                return Response({'error': 'سکه کافی ندارید.'}, status=400)
+            buyer_profile.coins -= cost
+            seller_profile = listing.seller
+            seller_profile.coins += cost
+        elif listing.currency == 'FRAGMENTS':
+            if buyer_profile.vow_fragments < cost:
+                return Response({'error': 'فرگمنت کافی ندارید.'}, status=400)
+            buyer_profile.vow_fragments -= cost
+            seller_profile = listing.seller
+            seller_profile.vow_fragments += cost
 
         # --- انجام تراکنش مالی ---
 
-        # 1. کسر پول از خریدار
-        buyer_profile.gems -= listing.price_gems
+        # 1. ذخیره تغییرات خریدار و فروشنده
         buyer_profile.save()
-
-        # 2. واریز پول به فروشنده
-        seller_profile = listing.seller
-        seller_profile.gems += listing.price_gems
         seller_profile.save()
 
         # 3. انتقال مالکیت کارت
@@ -384,7 +397,9 @@ def buy_card(request):
 
     return Response({
         'message': f'تبریک! کارت {card.template.name} خریداری شد.',
-        'remaining_gems': buyer_profile.gems
+        'remaining_gems': buyer_profile.gems,
+        'remaining_coins': buyer_profile.coins,
+        'remaining_vow': buyer_profile.vow_fragments
     })
 
 # ---------------------------------------------------------
@@ -406,7 +421,8 @@ def market_feed(request):
             'card_name': item.card_instance.template.name,
             'rarity': item.card_instance.template.rarity,
             'serial': item.card_instance.serial_number,
-            'price': item.price_gems,
+            'price': item.price,
+            'currency': item.currency,
             'seller': item.seller.user.username
         })
 
@@ -658,28 +674,27 @@ def create_listing(request):
     """ایجاد آگهی فروش جدید"""
     card_id = request.data.get('card_id')
     price = int(request.data.get('price', 0))
-    currency = request.data.get('currency', 'COINS')
+    currency = request.data.get('currency', 'GEMS')
 
     try:
+        profile = request.user.profile
         # کارت باید مال خود کاربر باشد و الان در حال استفاده نباشد
-        card = UserCard.objects.get(id=card_id, user=request.user)
+        card = UserCard.objects.get(id=card_id, owner=profile)
 
-        if card.is_listed:
+        if card.is_listed_in_market:
             return Response({'error': 'این کارت قبلاً لیست شده است.'}, status=400)
 
-        # چک کنیم که کارت Equip نشده باشد (اگر سیستم اسلات دارید)
-        # فرض: اگر کارت در اسلات باشد، باید خطا بدهیم یا خودکار برداریم
-        profile = request.user.profile
+        # چک کنیم که کارت Equip نشده باشد
         if card == profile.slot_1 or card == profile.slot_2 or card == profile.slot_3:
             return Response({'error': 'ابتدا کارت را از اسلات ماینینگ خارج کنید.'}, status=400)
 
         with transaction.atomic():
-            card.is_listed = True
+            card.is_listed_in_market = True
             card.save()
 
             MarketListing.objects.create(
-                seller=request.user,
-                card=card,
+                seller=profile,
+                card_instance=card,
                 price=price,
                 currency=currency
             )
@@ -697,10 +712,10 @@ def buy_listing(request, listing_id):
     try:
         with transaction.atomic():
             # قفل کردن رکورد برای جلوگیری از خرید همزمان دو نفر (Race Condition)
-            listing = MarketListing.objects.select_for_update().get(id=listing_id)
+            listing = MarketListing.objects.select_for_update().get(id=listing_id, is_active=True)
             buyer_profile = PlayerProfile.objects.select_for_update().get(user=request.user)
 
-            if listing.seller == request.user:
+            if listing.seller == buyer_profile:
                 return Response({'error': 'نمیتوانید کارت خودتان را بخرید!'}, status=400)
 
             # بررسی موجودی خریدار
@@ -710,7 +725,7 @@ def buy_listing(request, listing_id):
                     return Response({'error': 'سکه کافی ندارید.'}, status=400)
                 buyer_profile.coins -= cost
                 # واریز به فروشنده
-                seller_profile = PlayerProfile.objects.select_for_update().get(user=listing.seller)
+                seller_profile = listing.seller
                 seller_profile.coins += cost
                 seller_profile.save()
 
@@ -718,21 +733,30 @@ def buy_listing(request, listing_id):
                 if buyer_profile.gems < cost:
                     return Response({'error': 'الماس کافی ندارید.'}, status=400)
                 buyer_profile.gems -= cost
-                seller_profile = PlayerProfile.objects.select_for_update().get(user=listing.seller)
+                seller_profile = listing.seller
                 seller_profile.gems += cost
                 seller_profile.save()
 
+            elif listing.currency == 'FRAGMENTS':
+                if buyer_profile.vow_fragments < cost:
+                    return Response({'error': 'فرگمنت کافی ندارید.'}, status=400)
+                buyer_profile.vow_fragments -= cost
+                seller_profile = listing.seller
+                seller_profile.vow_fragments += cost
+                seller_profile.save()
+
             # انتقال مالکیت کارت
-            card = listing.card
-            card.user = request.user
-            card.is_listed = False  # آزاد کردن کارت
+            card = listing.card_instance
+            card.owner = buyer_profile
+            card.is_listed_in_market = False  # آزاد کردن کارت
             card.save()
 
             # ذخیره تغییرات خریدار
             buyer_profile.save()
 
-            # حذف آگهی
-            listing.delete()
+            # غیرفعال کردن آگهی به جای حذف
+            listing.is_active = False
+            listing.save()
 
             return Response({'message': f'کارت {card.template.name} خریداری شد!'})
 

@@ -1,9 +1,17 @@
 venv/
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
 db.sqlite3
 .env
 media/
 *.log
 coverage/
 .vscode/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.DS_Store
+staticfiles/
+node_modules/
