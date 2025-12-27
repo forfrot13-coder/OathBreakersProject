@@ -1,0 +1,147 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom base styles */
+@layer base {
+  body {
+    @apply bg-game-darker text-gray-100 font-sans antialiased;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-game-darker;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-game-card rounded;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-game-accent;
+  }
+}
+
+/* Custom component styles */
+@layer components {
+  .btn-primary {
+    @apply bg-game-accent hover:bg-game-accent-hover text-white font-bold py-2 px-4 rounded-lg transition-all duration-200 transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none;
+  }
+
+  .btn-secondary {
+    @apply bg-game-card hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition-all duration-200 border border-gray-600;
+  }
+
+  .card-base {
+    @apply bg-game-card rounded-xl p-4 shadow-lg border border-gray-700;
+  }
+
+  .input-field {
+    @apply w-full px-4 py-2 bg-game-darker border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-game-accent focus:ring-2 focus:ring-game-accent/20 transition-all;
+  }
+
+  /* Rarity badges */
+  .rarity-badge {
+    @apply px-2 py-1 rounded text-xs font-bold uppercase tracking-wider;
+  }
+
+  .rarity-common {
+    @apply rarity-badge bg-gray-600 text-white;
+  }
+
+  .rarity-rare {
+    @apply rarity-badge bg-blue-600 text-white;
+  }
+
+  .rarity-epic {
+    @apply rarity-badge bg-purple-600 text-white;
+  }
+
+  .rarity-legendary {
+    @apply rarity-badge bg-amber-500 text-black;
+  }
+
+  /* Currency displays */
+  .currency-display {
+    @apply flex items-center gap-2 px-3 py-1 bg-game-card rounded-full border border-gray-600;
+  }
+
+  .currency-coins {
+    @apply currency-display text-yellow-400;
+  }
+
+  .currency-gems {
+    @apply currency-display text-purple-400;
+  }
+
+  .currency-fragments {
+    @apply currency-display text-indigo-400;
+  }
+
+  /* Navigation */
+  .nav-item {
+    @apply flex flex-col items-center justify-center p-2 text-gray-400 hover:text-white transition-colors;
+  }
+
+  .nav-item.active {
+    @apply text-game-accent;
+  }
+
+  /* Card hover effect */
+  .game-card {
+    @apply bg-game-card rounded-lg overflow-hidden cursor-pointer transition-all duration-300 border-2 border-transparent hover:border-game-accent transform hover:scale-105 hover:shadow-xl;
+  }
+
+  /* Modal overlay */
+  .modal-overlay {
+    @apply fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4;
+  }
+
+  .modal-content {
+    @apply bg-game-card rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto border border-gray-700 shadow-2xl;
+  }
+
+  /* Loading spinner */
+  .spinner {
+    @apply border-4 border-gray-600 border-t-game-accent rounded-full animate-spin;
+  }
+
+  /* Toast notification */
+  .toast {
+    @apply fixed bottom-4 left-4 right-4 max-w-md mx-auto p-4 rounded-lg shadow-lg z-50 transform transition-all duration-300;
+  }
+
+  .toast-success {
+    @apply toast bg-green-600 text-white;
+  }
+
+  .toast-error {
+    @apply toast bg-red-600 text-white;
+  }
+
+  .toast-info {
+    @apply toast bg-blue-600 text-white;
+  }
+}
+
+/* Custom utilities */
+@layer utilities {
+  .text-glow {
+    text-shadow: 0 0 10px currentColor;
+  }
+
+  .box-glow {
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+  }
+
+  .gradient-border {
+    background: linear-gradient(135deg, #6366f1, #a855f7, #f59e0b);
+    padding: 2px;
+    border-radius: 0.75rem;
+  }
+}

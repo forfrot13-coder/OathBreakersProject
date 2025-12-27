@@ -17,3 +17,8 @@ coverage/
 .DS_Store
 staticfiles/
 node_modules/
+
+# Frontend build outputs
+game/static/game/dist/
+game/static/game/css/tailwind.css
+

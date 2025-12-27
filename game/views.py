@@ -324,7 +324,8 @@ def get_packs(request):
 
 
 def game_index(request):
-    return render(request, 'game/index.html')
+    # Main game page - serves React SPA
+    return render(request, 'game/base.html')
 
 # ==========================================
 
@@ -532,26 +533,18 @@ def exchange_coins(request):
 
 
 def login_page(request):
-    # اگر کاربر لاگین است، مستقیم برود به بازی
-    if request.user.is_authenticated:
-        # فرض بر اینکه اسم صفحه بازی game-index است
-        return redirect('game-index')
-    # allow preselecting mode via query param ?mode=register
-    mode = request.GET.get('mode', 'login')
-    return render(request, 'game/login.html', {'mode': mode})
+    # Login page - serves React SPA
+    return render(request, 'game/base.html')
 
 
 def landing(request):
-    # Simple landing page: if authenticated redirect to game index, else show welcome with instructions
-    if request.user.is_authenticated:
-        return redirect('game-index')
-    return render(request, 'game/welcome.html')
+    # Landing page - serves React SPA
+    return render(request, 'game/base.html')
 
 
 def register_page(request):
-    if request.user.is_authenticated:
-        return redirect('game-index')
-    return render(request, 'game/register.html')
+    # Register page - serves React SPA
+    return render(request, 'game/base.html')
 
 
 @api_view(['POST'])
