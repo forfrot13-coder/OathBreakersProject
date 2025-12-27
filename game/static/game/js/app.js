@@ -34,7 +34,7 @@ document.addEventListener('alpine:init', () => {
         sellModalOpen: false,
         selectedCardForSell: null,
         sellPrice: '',
-        sellCurrency: 'COINS', // یا 'GEMS'
+        // ✅ فقط Vow Fragments - حذف sellCurrency
 
         // سایر متغیرهای مورد انتظار در قالب
         showSlotSelector: false,
@@ -296,7 +296,7 @@ document.addEventListener('alpine:init', () => {
             }
             this.selectedCardForSell = card;
             this.sellPrice = '';
-            this.sellCurrency = 'COINS';
+            // ✅ فقط Vow Fragments پشتیبانی می‌شود - حذف انتخاب ارز
             this.sellModalOpen = true;
         },
 
@@ -315,8 +315,8 @@ document.addEventListener('alpine:init', () => {
                 },
                 body: JSON.stringify({
                     card_id: this.selectedCardForSell.id,
-                    price: this.sellPrice,
-                    currency: this.sellCurrency
+                    price: this.sellPrice
+                    // ✅ فقط Vow Fragments - حذف currency
                 })
             })
                 .then(res => res.json())

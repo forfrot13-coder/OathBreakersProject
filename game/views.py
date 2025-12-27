@@ -279,128 +279,9 @@ def claim_coins(request):
         else:
             return Response({'message': 'هنوز سکه‌ای تولید نشده است.'})
 
-# ---------------------------------------------------------
-# 1. فروش کارت (Listing)
-# ---------------------------------------------------------
+# Old list_card_for_sale function removed - replaced by create_listing
 
-
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def list_card_for_sale(request):
-    user = request.user
-    profile = user.profile
-
-    # گرفتن آی‌دی کارت و قیمت از ورودی کاربر
-    card_id = request.data.get('card_id')
-    price = request.data.get('price')
-
-    if not card_id or not price:
-        return Response({'error': 'شناسه کارت و قیمت الزامی است.'}, status=400)
-
-    try:
-        price = int(price)
-        if price <= 0:
-            raise ValueError
-    except ValueError:
-        return Response({'error': 'قیمت باید عدد مثبت باشد.'}, status=400)
-
-    # پیدا کردن کارت
-    try:
-        # کارت باید مال خود کاربر باشد و قبلاً در مارکت نباشد
-        card = UserCard.objects.get(
-            id=card_id, owner=profile, is_listed_in_market=False)
-    except UserCard.DoesNotExist:
-        return Response({'error': 'کارت یافت نشد یا قبلاً در مارکت لیست شده است.'}, status=404)
-
-    with transaction.atomic():
-        # تغییر وضعیت کارت به "در حال فروش"
-        card.is_listed_in_market = True
-        card.save()
-
-        # ایجاد آگهی فروش
-        MarketListing.objects.create(
-            seller=profile,
-            card_instance=card,
-            price=price,
-            currency='GEMS'
-        )
-
-    return Response({'message': 'کارت شما در مارکت قرار گرفت.'})
-
-# ---------------------------------------------------------
-# 2. خرید کارت (Buying)
-# ---------------------------------------------------------
-
-
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def buy_card(request):
-    buyer_user = request.user
-    buyer_profile = buyer_user.profile
-
-    listing_id = request.data.get('listing_id')
-
-    if not listing_id:
-        return Response({'error': 'شناسه آگهی الزامی است.'}, status=400)
-
-    # استفاده از select_for_update برای قفل کردن رکورد هنگام خرید (جلوگیری از خرید همزمان دو نفر)
-    with transaction.atomic():
-        try:
-            listing = MarketListing.objects.select_for_update().get(
-                id=listing_id,
-                is_active=True
-            )
-        except MarketListing.DoesNotExist:
-            return Response({'error': 'آگهی یافت نشد یا فروخته شده است.'}, status=404)
-
-        # جلوگیری از خرید کارت خودمان
-        if listing.seller == buyer_profile:
-            return Response({'error': 'شما نمی‌توانید کارت خودتان را بخرید!'}, status=400)
-
-        # چک کردن موجودی خریدار
-        cost = listing.price
-        if listing.currency == 'GEMS':
-            if buyer_profile.gems < cost:
-                return Response({'error': 'الماس کافی ندارید.'}, status=400)
-            buyer_profile.gems -= cost
-            seller_profile = listing.seller
-            seller_profile.gems += cost
-        elif listing.currency == 'COINS':
-            if buyer_profile.coins < cost:
-                return Response({'error': 'سکه کافی ندارید.'}, status=400)
-            buyer_profile.coins -= cost
-            seller_profile = listing.seller
-            seller_profile.coins += cost
-        elif listing.currency == 'FRAGMENTS':
-            if buyer_profile.vow_fragments < cost:
-                return Response({'error': 'فرگمنت کافی ندارید.'}, status=400)
-            buyer_profile.vow_fragments -= cost
-            seller_profile = listing.seller
-            seller_profile.vow_fragments += cost
-
-        # --- انجام تراکنش مالی ---
-
-        # 1. ذخیره تغییرات خریدار و فروشنده
-        buyer_profile.save()
-        seller_profile.save()
-
-        # 3. انتقال مالکیت کارت
-        card = listing.card_instance
-        card.owner = buyer_profile
-        # کارت از حالت مارکت خارج می‌شود و مال خریدار می‌شود
-        card.is_listed_in_market = False
-        card.save()
-
-        # 4. غیرفعال کردن آگهی
-        listing.is_active = False
-        listing.save()
-
-    return Response({
-        'message': f'تبریک! کارت {card.template.name} خریداری شد.',
-        'remaining_gems': buyer_profile.gems,
-        'remaining_coins': buyer_profile.coins,
-        'remaining_vow': buyer_profile.vow_fragments
-    })
+# Old buy_card function removed - replaced by buy_listing
 
 # ---------------------------------------------------------
 # 3. مشاهده مارکت (Market Feed)
@@ -408,15 +289,30 @@ def buy_card(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def market_feed(request):
-    listings = MarketListing.objects.filter(is_active=True).select_related(
-        'seller__user',
-        'card_instance__template',
-    )
-
-    serializer = MarketListingSerializer(listings, many=True, context={'request': request})
-    return Response(serializer.data)
+    """
+    نمایش لیست تمام کارت‌های فروشی در بازار
+    فقط آگهی‌های فعال نمایش داده می‌شوند
+    """
+    listings = MarketListing.objects.filter(
+        is_active=True
+    ).select_related('card_instance__template', 'seller__user').order_by('-created_at')
+    
+    data = []
+    for item in listings:
+        data.append({
+            'listing_id': item.id,
+            'card_name': item.card_instance.template.name,
+            'rarity': item.card_instance.template.rarity,
+            'serial': item.card_instance.serial_number,
+            'price': item.price,  # ✅ فقط Vow Fragments
+            'currency': 'Vow Fragments',  # ثابت
+            'seller': item.seller.user.username,
+            'created_at': item.created_at.isoformat()
+        })
+    
+    return Response(data)
 
 
 @api_view(['GET'])
@@ -661,94 +557,136 @@ def register_page(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def create_listing(request):
-    """ایجاد آگهی فروش جدید"""
+    """
+    فروش کارت در بازار سیاه با قیمت Vow Fragments
+    
+    Request body:
+    {
+        "card_id": 1,
+        "price": 100  # Vow Fragments
+    }
+    """
+    user = request.user
+    profile = user.profile
+
     card_id = request.data.get('card_id')
-    price = int(request.data.get('price', 0))
-    currency = request.data.get('currency', 'GEMS')
+    price = request.data.get('price')
+
+    if not card_id or not price:
+        return Response(
+            {'error': 'شناسه کارت و قیمت الزامی است.'},
+            status=400
+        )
 
     try:
-        profile = request.user.profile
-        # کارت باید مال خود کاربر باشد و الان در حال استفاده نباشد
-        card = UserCard.objects.get(id=card_id, owner=profile)
+        price = int(price)
+        if price <= 0:
+            raise ValueError("قیمت باید بیشتر از صفر باشد")
+    except ValueError:
+        return Response(
+            {'error': 'قیمت باید عدد مثبت باشد.'},
+            status=400
+        )
 
-        if card.is_listed_in_market:
-            return Response({'error': 'این کارت قبلاً لیست شده است.'}, status=400)
-
-        # چک کنیم که کارت Equip نشده باشد
-        if card == profile.slot_1 or card == profile.slot_2 or card == profile.slot_3:
-            return Response({'error': 'ابتدا کارت را از اسلات ماینینگ خارج کنید.'}, status=400)
-
-        with transaction.atomic():
-            card.is_listed_in_market = True
-            card.save()
-
-            MarketListing.objects.create(
-                seller=profile,
-                card_instance=card,
-                price=price,
-                currency=currency
-            )
-
-        return Response({'message': 'کارت با موفقیت در بازار سیاه قرار گرفت.'})
-
+    try:
+        card = UserCard.objects.get(
+            id=card_id, 
+            owner=profile, 
+            is_listed_in_market=False
+        )
     except UserCard.DoesNotExist:
-        return Response({'error': 'کارت یافت نشد.'}, status=404)
+        return Response(
+            {'error': 'کارت یافت نشد یا قبلاً در بازار لیست شده است.'},
+            status=404
+        )
+
+    with transaction.atomic():
+        card.is_listed_in_market = True
+        card.save()
+        
+        MarketListing.objects.create(
+            seller=profile,
+            card_instance=card,
+            price=price  # ✅ فقط Vow Fragments
+        )
+
+    return Response({
+        'message': f'کارت با قیمت {price} Vow Fragments در بازار قرار گرفت.'
+    })
 
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def buy_listing(request, listing_id):
-    """خرید کارت از دیگران"""
-    try:
-        with transaction.atomic():
-            # قفل کردن رکورد برای جلوگیری از خرید همزمان دو نفر (Race Condition)
-            listing = MarketListing.objects.select_for_update().get(id=listing_id, is_active=True)
-            buyer_profile = PlayerProfile.objects.select_for_update().get(user=request.user)
+    """
+    خرید کارت از بازار سیاه با Vow Fragments
+    
+    Request body:
+    {
+        "listing_id": 1
+    }
+    """
+    buyer_user = request.user
+    buyer_profile = buyer_user.profile
 
-            if listing.seller == buyer_profile:
-                return Response({'error': 'نمیتوانید کارت خودتان را بخرید!'}, status=400)
+    listing_id = request.data.get('listing_id')
 
-            # بررسی موجودی خریدار
-            cost = listing.price
-            if listing.currency == 'COINS':
-                if buyer_profile.coins < cost:
-                    return Response({'error': 'سکه کافی ندارید.'}, status=400)
-                buyer_profile.coins -= cost
-                # واریز به فروشنده
-                seller_profile = listing.seller
-                seller_profile.coins += cost
-                seller_profile.save()
+    if not listing_id:
+        return Response(
+            {'error': 'شناسه آگهی الزامی است.'},
+            status=400
+        )
 
-            elif listing.currency == 'GEMS':
-                if buyer_profile.gems < cost:
-                    return Response({'error': 'الماس کافی ندارید.'}, status=400)
-                buyer_profile.gems -= cost
-                seller_profile = listing.seller
-                seller_profile.gems += cost
-                seller_profile.save()
+    with transaction.atomic():
+        try:
+            listing = MarketListing.objects.select_for_update().get(
+                id=listing_id,
+                is_active=True
+            )
+        except MarketListing.DoesNotExist:
+            return Response(
+                {'error': 'آگهی یافت نشد یا فروخته شده است.'},
+                status=404
+            )
+        
+        # بررسی: خریدار نمی‌تواند کارت خود را بخرد
+        if listing.seller == buyer_profile:
+            return Response(
+                {'error': 'شما نمی‌توانید کارت خودتان را بخرید!'},
+                status=400
+            )
+        
+        # ✅ بررسی Vow Fragments (نه Gems)
+        if buyer_profile.vow_fragments < listing.price:
+            return Response(
+                {
+                    'error': f'Vow Fragments کافی ندارید. شما {buyer_profile.vow_fragments} دارید، نیاز به {listing.price} است.'
+                },
+                status=400
+            )
+        
+        # --- انجام تراکنش ---
+        
+        # 1. کسر Vow Fragments از خریدار
+        buyer_profile.vow_fragments -= listing.price
+        buyer_profile.save(update_fields=['vow_fragments'])
+        
+        # 2. واریز Vow Fragments به فروشنده
+        seller_profile = listing.seller
+        seller_profile.vow_fragments += listing.price
+        seller_profile.save(update_fields=['vow_fragments'])
+        
+        # 3. انتقال مالکیت کارت
+        card = listing.card_instance
+        card.owner = buyer_profile
+        card.is_listed_in_market = False
+        card.save(update_fields=['owner', 'is_listed_in_market'])
+        
+        # 4. غیرفعال کردن آگهی
+        listing.is_active = False
+        listing.save(update_fields=['is_active'])
 
-            elif listing.currency == 'FRAGMENTS':
-                if buyer_profile.vow_fragments < cost:
-                    return Response({'error': 'فرگمنت کافی ندارید.'}, status=400)
-                buyer_profile.vow_fragments -= cost
-                seller_profile = listing.seller
-                seller_profile.vow_fragments += cost
-                seller_profile.save()
-
-            # انتقال مالکیت کارت
-            card = listing.card_instance
-            card.owner = buyer_profile
-            card.is_listed_in_market = False  # آزاد کردن کارت
-            card.save()
-
-            # ذخیره تغییرات خریدار
-            buyer_profile.save()
-
-            # غیرفعال کردن آگهی به جای حذف
-            listing.is_active = False
-            listing.save()
-
-            return Response({'message': f'کارت {card.template.name} خریداری شد!'})
-
-    except MarketListing.DoesNotExist:
-        return Response({'error': 'این آگهی وجود ندارد یا فروخته شده است.'}, status=404)
+    return Response({
+        'message': f'تبریک! کارت {card.template.name} خریداری شد.',
+        'remaining_vow_fragments': buyer_profile.vow_fragments
+    })

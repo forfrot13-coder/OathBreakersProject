@@ -79,12 +79,12 @@ class UserCardAdmin(admin.ModelAdmin):
 
 @admin.register(MarketListing)
 class MarketListingAdmin(admin.ModelAdmin):
-    # فیلدهای جدید: price, currency به جای price_gems
-    list_display = ('seller', 'get_card_name', 'price', 'currency', 'created_at', 'is_active')
-    list_filter = ('currency', 'created_at', 'is_active')
+    # فیلدهای جدید: price فقط برای Vow Fragments
+    list_display = ('seller', 'get_card_name', 'price', 'created_at', 'is_active')
+    list_filter = ('created_at', 'is_active')
     actions = ['cancel_listings']
     search_fields = ('seller__user__username', 'card_instance__template__name')
-    
+
     def get_card_name(self, obj):
         return obj.card_instance.template.name if obj.card_instance else '-'
     get_card_name.short_description = 'کارت'

@@ -130,37 +130,35 @@ class UserCard(models.Model):
 
 
 class MarketListing(models.Model):
-    CURRENCY_CHOICES = [
-        ('COINS', 'سکه'),
-        ('GEMS', 'الماس'),
-        ('FRAGMENTS', 'Vow Fragment'),
-    ]
-
+    """
+    مدل فروش کارت‌ها در بازار سیاه
+    قیمت‌گذاری فقط بر اساس Vow Fragments
+    """
     seller = models.ForeignKey(
-        PlayerProfile, on_delete=models.CASCADE, related_name='listings')
-    card_instance = models.OneToOneField(UserCard, on_delete=models.CASCADE, related_name='market_listing')
-
-    # قیمت آگهی
+        PlayerProfile, 
+        on_delete=models.PROTECT, 
+        related_name='market_listings'
+    )
+    card_instance = models.OneToOneField(
+        UserCard, 
+        on_delete=models.CASCADE, 
+        related_name='market_listing'
+    )
+    
+    # ✅ فقط price برای Vow Fragments
     price = models.PositiveIntegerField(
-        validators=[MinValueValidator(1)], verbose_name="قیمت")
-    currency = models.CharField(max_length=10, choices=CURRENCY_CHOICES, default='GEMS', verbose_name="نوع ارز")
-
+        validators=[MinValueValidator(1)],
+        verbose_name="قیمت (Vow Fragments)"
+    )
+    
     created_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
-
-    # برای نمایش جدیدترین‌ها در ابتدا
+    
     class Meta:
         ordering = ['-created_at']
-
+        indexes = [models.Index(fields=['is_active', '-created_at'])]
+        verbose_name = "لیست بازار"
+        verbose_name_plural = "لیست‌های بازار"
+    
     def __str__(self):
-        return f"Sell {self.card_instance.template.name} for {self.price} {self.currency}"
-
-    # backward compatibility: some older code/migrations reference `price_gems`
-    @property
-    def price_gems(self):
-        return self.price if self.currency == 'GEMS' else 0
-
-    @price_gems.setter
-    def price_gems(self, value):
-        self.price = value
-        self.currency = 'GEMS'
+        return f"{self.card_instance.template.name} - {self.price} Vow Fragments"

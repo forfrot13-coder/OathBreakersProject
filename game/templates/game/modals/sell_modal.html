@@ -16,37 +16,19 @@
         <!-- فرم قیمت گذاری -->
         <div class="space-y-4">
 
-            <!-- انتخاب نوع ارز -->
-            <div>
-                <label class="block text-xs text-gray-400 mb-2">دریافت چه ارزی؟</label>
-                <div class="flex gap-2">
-                    <button @click="sellCurrency = 'COINS'"
-                        :class="sellCurrency === 'COINS' ? 'bg-yellow-600 text-white border-yellow-400' : 'bg-gray-800 text-gray-400 border-gray-700'"
-                        class="flex-1 py-2 rounded-lg border flex items-center justify-center gap-2 transition-all btn-3d">
-                        <img src="{% static 'game/images/icon_coin.png' %}" class="w-5 h-5 float-3d"> سکه
-                    </button>
-                    <button @click="sellCurrency = 'GEMS'"
-                        :class="sellCurrency === 'GEMS' ? 'bg-blue-600 text-white border-blue-400' : 'bg-gray-800 text-gray-400 border-gray-700'"
-                        class="flex-1 py-2 rounded-lg border flex items-center justify-center gap-2 transition-all btn-3d">
-                        <img src="{% static 'game/images/icon_gem.png' %}" class="w-5 h-5 float-3d"> الماس
-                    </button>
-                </div>
-            </div>
-
-            <!-- ورودی قیمت -->
-            <div>
-                <label class="block text-xs text-gray-400 mb-2">قیمت پیشنهادی</label>
-                <div class="relative">
-                    <input type="number" x-model="sellPrice"
-                        class="w-full bg-black border border-gray-700 rounded-lg py-3 px-4 text-white text-center text-lg font-bold focus:outline-none focus:border-red-500 input-3d"
-                        placeholder="0">
-                    <div class="absolute inset-y-0 left-4 flex items-center text-gray-500 text-sm">
-                        <span x-show="sellCurrency === 'COINS'">Scoins</span>
-                        <span x-show="sellCurrency === 'GEMS'">Gems</span>
-                    </div>
-                </div>
-                <p class="text-[10px] text-gray-500 mt-1 text-center">۱۰٪ مالیات بازار سیاه کسر خواهد شد.</p>
-            </div>
+           <!-- ورودی قیمت (فقط Vow Fragments) -->
+           <div>
+               <label class="block text-xs text-gray-400 mb-2">قیمت پیشنهادی (Vow Fragments)</label>
+               <div class="relative">
+                   <input type="number" x-model="sellPrice"
+                       class="w-full bg-black border border-gray-700 rounded-lg py-3 px-4 text-white text-center text-lg font-bold focus:outline-none focus:border-red-500 input-3d"
+                       placeholder="0">
+                   <div class="absolute inset-y-0 left-4 flex items-center text-gray-500 text-sm">
+                       <span>Vow Fragments</span>
+                   </div>
+               </div>
+               <p class="text-[10px] text-gray-500 mt-1 text-center">فقط Vow Fragments در بازار سیاه پذیرفته می‌شود.</p>
+           </div>
 
             <!-- دکمه تایید -->
             <button @click="createListing()"
