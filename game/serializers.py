@@ -66,7 +66,7 @@ class PlayerProfileSerializer(serializers.ModelSerializer):
         return slots_data
 
     def get_total_mining_rate(self, obj):
-        return obj.calculate_mining_rate()
+        return obj.current_mining_rate  # یا obj.mining_rate_display
 
     def get_avatar_url(self, obj):
         if obj.avatar and obj.avatar.image:

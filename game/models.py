@@ -45,23 +45,25 @@ class PlayerProfile(models.Model):
         return self.level * 1000
 
     def update_mining_rate(self):
-        """محاسبه ریت با اعمال ضریب لول"""
+        """محاسبهٔ نرخ استخراج بر اساس کارت‌های تجهیزشده و level"""
         base_rate = 0
-        if self.slot_1: base_rate += self.slot_1.template.mining_rate
-        if self.slot_2: base_rate += self.slot_2.template.mining_rate
-        if self.slot_3: base_rate += self.slot_3.template.mining_rate
+        if self.slot_1 and self.slot_1.template:
+            base_rate += self.slot_1.template.mining_rate
+        if self.slot_2 and self.slot_2.template:
+            base_rate += self.slot_2.template.mining_rate
+        if self.slot_3 and self.slot_3.template:
+            base_rate += self.slot_3.template.mining_rate
         
-        # ضریب: هر لول 5 درصد اضافه می‌کند (لول 1 = 1.05، لول 10 = 1.50)
+        # ضریب: هر لول 5 درصد اضافه می‌کند
         multiplier = 1 + (self.level * 0.05)
-        
         final_rate = int(base_rate * multiplier)
         
         self.current_mining_rate = final_rate
-        self.save()
+        self.save(update_fields=['current_mining_rate'])
         return final_rate
     
-    # متد قدیمی (برای سازگاری با کدهای قبلی، حالا فقط عدد ذخیره شده را می‌خواند)
-    def calculate_mining_rate(self):
+    @property
+    def mining_rate_display(self):
         return self.current_mining_rate
 
 
@@ -117,10 +119,11 @@ class UserCard(models.Model):
         CardTemplate, on_delete=models.PROTECT, related_name='instances')
     serial_number = models.PositiveIntegerField()
     obtained_at = models.DateTimeField(auto_now_add=True)
-    is_listed_in_market = models.BooleanField(default=False)
-    is_listed = models.BooleanField(default=False, help_text="آیا کارت در مارکت برای فروش است؟")
+    is_listed_in_market = models.BooleanField(default=False, db_index=True)
+    
     class Meta:
         unique_together = ('template', 'serial_number')
+        indexes = [models.Index(fields=['owner', 'is_listed_in_market'])]
 
     def __str__(self):
         return f"{self.template.name} #{self.serial_number}"

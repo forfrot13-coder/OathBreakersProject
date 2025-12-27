@@ -22,11 +22,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 # Read secret key and debug from environment for safety in production.
-SECRET_KEY = os.environ.get(
-    'DJANGO_SECRET_KEY', 'django-insecure-dh#ppc83x5gfidwc=@xeaip&@kh3p29u*=)ry-ggtj_-_juf#h')
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
+if not SECRET_KEY:
+    raise ValueError("DJANGO_SECRET_KEY environment variable must be set")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DJANGO_DEBUG', 'True') == 'True'
+DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == 'True'
 
 # In production set this to your domain(s) via environment or settings override
 ALLOWED_HOSTS = os.environ.get(
