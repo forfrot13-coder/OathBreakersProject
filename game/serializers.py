@@ -97,13 +97,28 @@ class TokenSerializer(serializers.ModelSerializer):
 
 
 class MarketListingSerializer(serializers.ModelSerializer):
-    seller_name = serializers.CharField(
-        source='seller.user.username', read_only=True)
-    card_details = UserCardSerializer(source='card_instance', read_only=True)
-
+    """
+    سریالایزر برای لیست‌های بازار
+    فقط Vow Fragments پشتیبانی می‌شود
+    """
+    seller_username = serializers.CharField(
+        source='seller.user.username', 
+        read_only=True
+    )
+    card = UserCardSerializer(
+        source='card_instance', 
+        read_only=True
+    )
+    currency = serializers.SerializerMethodField()
+    
     class Meta:
         model = MarketListing
-        fields = ['id', 'seller_name', 'card_details', 'price', 'currency', 'is_active', 'created_at']
+        fields = ['id', 'seller_username', 'card', 'price', 'currency', 'created_at', 'is_active']
+        read_only_fields = ['id', 'seller_username', 'card', 'created_at']
+    
+    def get_currency(self, obj):
+        """فقط Vow Fragments"""
+        return 'Vow Fragments'
 
 
 class PackSerializer(serializers.ModelSerializer):
